@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "44885582295",
+    "firebase_url": "https://gardenia-48cdf-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "gardenia-48cdf",
+    "storage_bucket": "gardenia-48cdf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:44885582295:android:233c2ed54eed7b59fcab92",
+        "android_client_info": {
+          "package_name": "com.example.shop_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC5n1KQNFvJt4V53_SyFMyTH1x-qRdF4YU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
