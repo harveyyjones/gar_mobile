@@ -73,6 +73,29 @@ class AppTypography {
   );
 }
 
+class CategoryLevel {
+  final String name;
+  final int level;
+  final String fullPath;
+
+  CategoryLevel({
+    required this.name,
+    required this.level,
+    required this.fullPath,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CategoryLevel &&
+          runtimeType == other.runtimeType &&
+          name == other.name &&
+          level == other.level;
+
+  @override
+  int get hashCode => name.hashCode ^ level.hashCode;
+}
+
 class WholesalerDetailScreen extends StatefulWidget {
   final Map<String, dynamic> wholesaler;
   WholesalerDetailScreen({required this.wholesaler});
@@ -86,6 +109,8 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late Map<String, TextEditingController> quantityControllers;
+  String? selectedCategory;
+  Set<String> categories = {};
 
   @override
   void initState() {
@@ -104,6 +129,13 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
       quantityControllers[productId] = TextEditingController(text: '1');
     }
     return quantityControllers[productId]!;
+  }
+
+  // Extract the last category from path
+  String _getLastCategory(String path) {
+    if (path.isEmpty) return '';
+    final parts = path.split('>');
+    return parts.isNotEmpty ? parts.last.trim() : '';
   }
 
   @override
@@ -126,7 +158,6 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
               child: _buildWholesalerInfo(),
             ),
             _buildProductsGrid(),
-            // Add some bottom padding
             const SliverPadding(
               padding: EdgeInsets.only(bottom: 20),
             ),
@@ -189,7 +220,7 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Text(
-                  'Error loading products',
+                  'Error loading products: ${snapshot.error}',
                   style: AppTypography.body.copyWith(
                     color: CupertinoColors.destructiveRed,
                   ),
@@ -198,36 +229,132 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
             );
           }
 
-          if (snapshot.data!.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  'No products available',
-                  style: AppTypography.bodyLight,
+          final products = snapshot.data ?? [];
+
+          // Extract only the last category from each product's path
+          categories = products.fold<Set<String>>({}, (set, product) {
+            final lastCategory = _getLastCategory(product.categoryPath);
+            if (lastCategory.isNotEmpty) {
+              set.add(lastCategory);
+            }
+            return set;
+          });
+
+          // Filter products based on the last category
+          final filteredProducts = selectedCategory == null
+              ? products
+              : products.where((product) => 
+                  _getLastCategory(product.categoryPath) == selectedCategory)
+                  .toList();
+
+          return Column(
+            children: [
+              // Categories list
+              if (categories.isNotEmpty) ...[
+                Container(
+                  height: 50,
+                  margin: const EdgeInsets.symmetric(vertical: 16),
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: [
+                      // "All" category
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: CupertinoButton(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          color: selectedCategory == null
+                              ? AppColors.accent
+                              : AppColors.accent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(25),
+                          onPressed: () {
+                            setState(() => selectedCategory = null);
+                          },
+                          child: Text(
+                            'All',
+                            style: AppTypography.body.copyWith(
+                              color: selectedCategory == null
+                                  ? Colors.white
+                                  : AppColors.accent,
+                              fontWeight: selectedCategory == null
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Add this part to create category buttons
+                      ...categories.map((category) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: CupertinoButton(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          color: selectedCategory == category
+                              ? AppColors.accent
+                              : AppColors.accent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(25),
+                          onPressed: () {
+                            setState(() => selectedCategory = category);
+                          },
+                          child: Text(
+                            category,
+                            style: AppTypography.body.copyWith(
+                              color: selectedCategory == category
+                                  ? Colors.white
+                                  : AppColors.accent,
+                              fontWeight: selectedCategory == category
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      )).toList(),
+                    ],
+                  ),
+                ),
+              ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Category path and product count
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (selectedCategory != null)
+                            Text(
+                              'Category: ${selectedCategory!}',
+                              style: AppTypography.bodyLight,
+                            ),
+                          SizedBox(height: 4),
+                          Text(
+                            '${filteredProducts.length} Products',
+                            style: AppTypography.bodyLight,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Grid
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.75,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                      ),
+                      itemCount: filteredProducts.length,
+                      itemBuilder: (context, index) {
+                        return _buildProductItem(filteredProducts[index], context);
+                      },
+                    ),
+                  ],
                 ),
               ),
-            );
-          }
-
-          final products = snapshot.data!;
-          
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.75,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-              ),
-              itemCount: products.length,
-              itemBuilder: (context, index) {
-                return _buildProductItem(products[index], context);
-              },
-            ),
+            ],
           );
         },
       ),

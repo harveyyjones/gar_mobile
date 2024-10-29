@@ -70,7 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await Navigator.of(context).pushAndRemoveUntil(
           CupertinoPageRoute(
             builder: (context) => LoginPage(
-              onLoginPressed: (email, password) async => null,
+          
             ),
           ),
           (route) => false,

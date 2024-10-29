@@ -5,6 +5,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shop_app/business%20logic/models/wholesaler_model.dart';
 import 'package:shop_app/business%20logic/sign_up_logic.dart';
 import 'package:shop_app/screens/home/home_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shop_app/screens/sign%20in%20page/sign_in_page.dart';
+
+// Modern color scheme
+class AppColors {
+  static const primary = Color(0xFF0A84FF);
+  static const background = Color(0xFFFFFFFF);
+  static const surface = Color(0xFFF9FAFB);
+  static const text = Color(0xFF1A1D1E);
+  static const textLight = Color(0xFF6B7280);
+  static const error = Color(0xFFDC2626);
+}
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -18,6 +30,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final passwordController = TextEditingController();
   final SignUpLogic _signUpLogic = SignUpLogic(); // Initialize SignUpLogic
   UserType selectedUserType = UserType.customer; // Change to UserType enum
+  bool _isLoading = false; // Added loading state
 
   bool isValidEmail(String email) {
     return email.contains('@');
@@ -211,105 +224,280 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
+  void _showError(String message) {
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: GoogleFonts.poppins(color: Colors.white),
+        ),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sign Up'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: passwordController,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
-              obscureText: true,
-            ),
-            const SizedBox(height: 24),
-            // Role Selection
-            Container(
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text(
-                      'I want to:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 40),
+                    _buildHeader(),
+                    const SizedBox(height: 48),
+                    Expanded(
+                      child: _buildForm(),
                     ),
-                  ),
-                  RadioListTile<UserType>(
-                    title: const Text('Buy Products (Customer)'),
-                    value: UserType.customer,
-                    groupValue: selectedUserType,
-                    onChanged: (UserType? value) {
-                      if (value != null) {
-                        setState(() => selectedUserType = value);
-                      }
-                    },
-                  ),
-                  RadioListTile<UserType>(
-                    title: const Text('Sell Products (Wholesaler)'),
-                    value: UserType.wholesaler,
-                    groupValue: selectedUserType,
-                    onChanged: (UserType? value) {
-                      if (value != null) {
-                        setState(() => selectedUserType = value);
-                      }
-                    },
-                  ),
-                ],
+                    _buildFooter(),
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () async {
-                final email = emailController.text;
-                final password = passwordController.text;
-                
-                String? error = await _signUpLogic.signUpUser( // Call signUpUser from SignUpLogic
-                  email,
-                  password,
-                  selectedUserType, // Pass selectedUserType to signUpUser
-                );
-                if (error == null) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    CupertinoPageRoute(builder: (context) => HomePage()),
-                    (route) => false,
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(error)),
-                  );
-                }
-              },
-              child: const Text('Sign Up'),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Welcome',
+          style: GoogleFonts.poppins(
+            fontSize: 32,
+            fontWeight: FontWeight.w600,
+            color: AppColors.text,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Create an account to continue',
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            color: AppColors.textLight,
+            letterSpacing: 0.1,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildForm() {
+    return Column(
+      children: [
+        _buildInputField(
+          controller: emailController,
+          label: 'Email',
+          icon: CupertinoIcons.mail,
+          keyboardType: TextInputType.emailAddress,
+        ),
+        const SizedBox(height: 16),
+        _buildInputField(
+          controller: passwordController,
+          label: 'Password',
+          icon: CupertinoIcons.lock,
+          isPassword: true,
+        ),
+        const SizedBox(height: 24),
+        _buildSignUpButton(),
+      ],
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool isPassword = false,
+    TextInputType? keyboardType,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.grey.withOpacity(0.1),
+        ),
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: isPassword,
+        keyboardType: keyboardType,
+        style: GoogleFonts.poppins(
+          fontSize: 16,
+          color: AppColors.text,
+        ),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: GoogleFonts.poppins(
+            color: AppColors.textLight,
+            fontSize: 14,
+          ),
+          prefixIcon: Icon(
+            icon,
+            color: AppColors.textLight,
+            size: 20,
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
+          floatingLabelBehavior: FloatingLabelBehavior.auto,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSignUpButton() {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: _isLoading
+            ? null
+            : () async {
+                setState(() => _isLoading = true);
+                
+                try {
+                  final email = emailController.text;
+                  final password = passwordController.text;
+                  
+                  String? error = await _signUpLogic.signUpUser(
+                    email,
+                    password,
+                    selectedUserType,
+                  );
+                  
+                  if (!mounted) return;
+                  
+                  if (error == null) {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      CupertinoPageRoute(builder: (context) => HomePage()),
+                      (route) => false,
+                    );
+                  } else {
+                    _showError(error);
+                  }
+                } catch (e) {
+                  _showError('An unexpected error occurred. Please try again.');
+                } finally {
+                  if (mounted) {
+                    setState(() => _isLoading = false);
+                  }
+                }
+              },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+        ),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: _isLoading
+              ? const SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Text(
+                  'Create Account',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              height: 1,
+              width: 100,
+              color: Colors.grey.withOpacity(0.2),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'or',
+                style: GoogleFonts.poppins(
+                  color: AppColors.textLight,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            Container(
+              height: 1,
+              width: 100,
+              color: Colors.grey.withOpacity(0.2),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Already have an account?',
+          style: GoogleFonts.poppins(
+            color: AppColors.textLight,
+            fontSize: 14,
+          ),
+        ),
+        TextButton(
+          onPressed: () => Navigator.push(context, CupertinoPageRoute(builder: (context) => LoginPage())),
+          child: Text(
+            'Sign In',
+            style: GoogleFonts.poppins(
+              color: AppColors.primary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

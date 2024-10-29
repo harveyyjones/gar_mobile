@@ -34,7 +34,7 @@ class Product {
     return Product(
       id: doc.id,
       barcode: data['barcode'] ?? '',
-      categoryPath: data['category'] ?? '',
+      categoryPath: data['category_path'] ?? '',
       createdAt: (data['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
       images: List<String>.from(data['images'] ?? []),
       isVisible: data['is_visible'] is bool ? data['is_visible'] : (data['is_visible'] == 'true'),
@@ -50,7 +50,7 @@ class Product {
   Map<String, dynamic> toFirestore() {
     return {
       'barcode': barcode,
-      'category': categoryPath,
+      'category_path': categoryPath,
       'created_at': Timestamp.fromDate(createdAt),
       'images': images,
       'is_visible': isVisible,
