@@ -1,6 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+enum UserType {
+  customer,
+  wholesaler
+}
+
 class SignUpLogic {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -13,7 +18,7 @@ class SignUpLogic {
     return password.length > 5;
   }
 
-  Future<String?> signUpUser(String email, String password) async {
+  Future<String?> signUpUser(String email, String password, UserType userType) async {
     if (!isValidEmail(email)) {
       return 'Invalid email format';
     }
@@ -28,7 +33,12 @@ class SignUpLogic {
         password: password,
       );
 
-      await _initializeUserData(userCredential.user!.uid);
+      // Initialize data based on user type
+      if (userType == UserType.customer) {
+        await _initializeCustomerData(userCredential.user!.uid);
+      } else {
+        await _initializeWholesalerData(userCredential.user!.uid);
+      }
 
       return null; // Return null if sign-up is successful
     } on FirebaseAuthException catch (e) {
@@ -42,7 +52,8 @@ class SignUpLogic {
       return 'An unexpected error occurred. Please try again.';
     }
   }
-  Future<void> _initializeUserData(String uid) async {
+
+  Future<void> _initializeCustomerData(String uid) async {
     await _firestore.collection('users').doc(uid).set({
       'name': '',
       'surname': '',
@@ -69,7 +80,7 @@ class SignUpLogic {
               'eu_vat_no': '',
               'is_seller_in_app': true,
               'nip_number': '',
-              'role': '',
+              'role': 'customer',
               'tax_no': '',
               'uid': '',
               'zip_no': '02-458'
@@ -79,6 +90,71 @@ class SignUpLogic {
       },
       'phone': '',
       'email': _auth.currentUser?.email,
+      'created_at': FieldValue.serverTimestamp(),
+      'cart_items': [],
+      'liked_items': [],
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> _initializeWholesalerData(String uid) async {
+    await _firestore.collection('sellers').doc(uid).set({
+      'name': '',
+      'surname': '',
+      'nip_number': '',
+      'address': {
+        'adress_of_company': '',
+        'adress_of_delivery': [
+          {
+            '0': {
+              'adress': '',
+              'business_entity': 'Ship to my place',
+              'cargo_company': '',
+              'cargo_customer_no': '',
+              'city': '',
+              'country': '',
+              'name': '',
+              'phone': '',
+              'zip': '',
+              'business_license_image': '',
+              'company_name': '',
+              'company_registration_no': '',
+              'contact_name': '',
+              'email': '',
+              'eu_vat_no': '',
+              'is_seller_in_app': true,
+              'nip_number': '',
+              'role': 'wholesaler',
+              'tax_no': '',
+              'uid': '',
+              'zip_no': '02-458'
+            }
+          }
+        ]
+      },
+      'phone': '',
+      'email': _auth.currentUser?.email,
+      'created_at': FieldValue.serverTimestamp(),
+      'is_active': true,
+      'rating': 0,
+      'total_sales': 0,
+      'products': [],
+      'categories': [],
+      'bank_details': {
+        'account_number': '',
+        'bank_name': '',
+        'swift_code': '',
+      },
+      'shipping_methods': [],
+      'payment_methods': [],
+      'working_hours': {
+        'monday': {'open': '', 'close': ''},
+        'tuesday': {'open': '', 'close': ''},
+        'wednesday': {'open': '', 'close': ''},
+        'thursday': {'open': '', 'close': ''},
+        'friday': {'open': '', 'close': ''},
+        'saturday': {'open': '', 'close': ''},
+        'sunday': {'open': '', 'close': ''},
+      },
     }, SetOptions(merge: true));
   }
 }

@@ -1,5 +1,7 @@
 // lib/business_logic/models/cart_model.dart
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class CartItem {
   final String productId;
   final String name;
@@ -7,6 +9,7 @@ class CartItem {
   final double price;
   final String currency;
   int quantity;
+  final String salerId; // Make sure this is properly initialized
 
   CartItem({
     required this.productId,
@@ -15,6 +18,7 @@ class CartItem {
     required this.price,
     required this.currency,
     required this.quantity,
+    required this.salerId,
   });
 
   factory CartItem.fromMap(Map<String, dynamic> map) {
@@ -23,8 +27,9 @@ class CartItem {
       name: map['name'] ?? '',
       image: map['image'] ?? '',
       price: (map['price'] ?? 0).toDouble(),
-      currency: map['currency'] ?? 'PLN',
+      currency: map['currency'] ?? '', // Ensure currency has a default value
       quantity: map['quantity'] ?? 1,
+      salerId: map['seller_id'] ?? '', // Changed from 'saler_id' to 'seller_id'
     );
   }
 
@@ -36,6 +41,7 @@ class CartItem {
       'price': price,
       'currency': currency,
       'quantity': quantity,
+      'seller_id': salerId, // Changed from 'saler_id' to 'seller_id'
     };
   }
 
@@ -46,6 +52,7 @@ class CartItem {
     double? price,
     String? currency,
     int? quantity,
+    String? salerId,
   }) {
     return CartItem(
       productId: productId ?? this.productId,
@@ -54,7 +61,32 @@ class CartItem {
       price: price ?? this.price,
       currency: currency ?? this.currency,
       quantity: quantity ?? this.quantity,
+      salerId: salerId ?? this.salerId,
     );
+  }
+
+  factory CartItem.fromFirestore(Map<String, dynamic> data) {
+    return CartItem(
+      productId: data['product_id'] ?? '',
+      name: data['name'] ?? '',
+      price: (data['price'] ?? 0).toDouble(),
+      currency: data['currency'] ?? '',
+      image: data['image'] ?? '',
+      quantity: data['quantity'] ?? 0,
+      salerId: data['seller_id'] ?? '', // Changed from 'saler_id' to 'seller_id'
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'product_id': productId,
+      'name': name,
+      'price': price,
+      'currency': currency,
+      'image': image,
+      'quantity': quantity,
+      'seller_id': salerId,
+    };
   }
 }
 
@@ -76,6 +108,7 @@ class Cart {
   Map<String, dynamic> toMap() {
     return {
       'cart_items': items.map((item) => item.toMap()).toList(),
+      'updated_at': FieldValue.serverTimestamp(), // Added updated_at field
     };
   }
 

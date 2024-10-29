@@ -12,6 +12,7 @@ class Product {
   final DateTime updatedAt;
   final String currency;
   final double price;
+  final String salerId;
 
   Product({
     required this.categoryPath,
@@ -25,24 +26,8 @@ class Product {
     required this.updatedAt,
     required this.currency,
     required this.price,
+    required this.salerId,
   });
-
-  factory Product.fromMap(Map<String, dynamic> map) {
-    return Product(
-      id: map['product_id'] ?? '',
-      barcode: map['barcode'] ?? '',
-      categoryPath: map['category'] ?? '',
-      createdAt: (map['created_at'] as Timestamp).toDate(),
-      images: List<String>.from(map['images'] ?? []),
-      isVisible: map['is_visible'] is bool ? map['is_visible'] : (map['is_visible'] == 'true'), // Ensure boolean type
-      name: map['name'] ?? '',
-      productDescription: map['description'] ?? '',
-      updatedAt: (map['updated_at'] as Timestamp).toDate(),
-      // New fields
-      currency: map['currency'] ?? '', // Added currency mapping
-      price: (map['price'] ?? 0.0).toDouble(), // Added price mapping
-    );
-  }
 
   factory Product.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -50,33 +35,31 @@ class Product {
       id: doc.id,
       barcode: data['barcode'] ?? '',
       categoryPath: data['category'] ?? '',
-      createdAt: (data['created_at'] as Timestamp).toDate(),
+      createdAt: (data['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
       images: List<String>.from(data['images'] ?? []),
-      isVisible: data['is_visible'] is bool ? data['is_visible'] : (data['is_visible'] == 'true'), // Ensure boolean type
+      isVisible: data['is_visible'] is bool ? data['is_visible'] : (data['is_visible'] == 'true'),
       name: data['name'] ?? '',
-      productDescription: data['description'] ?? '',
-      updatedAt: (data['updated_at'] as Timestamp).toDate(),
-      // New fields
-      currency: data['currency'] ?? '', // Added currency mapping
-      price: (data['price'] ?? 0.0).toDouble(), // Added price mapping
+      productDescription: data['product_description'] ?? '',
+      updatedAt: (data['updated_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      currency: data['currency'] ?? '',
+      price: (data['price'] ?? 0.0).toDouble(),
+      salerId: data['seller_id'] ?? '',
     );
   }
 
   Map<String, dynamic> toFirestore() {
     return {
-      'product_id': id,
       'barcode': barcode,
       'category': categoryPath,
-      'created_at': createdAt.toIso8601String(),
+      'created_at': Timestamp.fromDate(createdAt),
       'images': images,
       'is_visible': isVisible,
       'name': name,
-      'product_description': productDescription,
-      'updated_at': updatedAt.toIso8601String(),
-      // New fields
+      'description': productDescription,
+      'updated_at': Timestamp.fromDate(updatedAt),
       'currency': currency,
       'price': price,
-      'liked_at': DateTime.now().toIso8601String(), // Adding liked_at for liked items collection
+      'seller_id': salerId,
     };
   }
 
@@ -92,6 +75,7 @@ class Product {
     DateTime? updatedAt,
     String? currency,
     double? price,
+    String? salerId,
   }) {
     return Product(
       id: id ?? this.id,
@@ -103,9 +87,9 @@ class Product {
       name: name ?? this.name,
       productDescription: productDescription ?? this.productDescription,
       updatedAt: updatedAt ?? this.updatedAt,
-      // New fields
       currency: currency ?? this.currency,
       price: price ?? this.price,
+      salerId: salerId ?? this.salerId,
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:shop_app/business%20logic/firebase_service.dart';
 import 'package:shop_app/business%20logic/models/product_model.dart';
 import 'package:shop_app/screens/Product%20Detail%20Screen/product_detail_screen.dart';
+import 'package:shop_app/screens/details/components/expandable_about.dart';
 import 'package:shop_app/screens/details/components/like_button.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -137,16 +138,17 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
 
   Widget _buildWholesalerInfo() {
     return FutureBuilder(
-      future: _firebaseService.fetchWholesalerById(widget.wholesaler['saler_id']),
+      future: _firebaseService.fetchWholesalerById(widget.wholesaler['seller_id']),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
+          return const Center(
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               child: CupertinoActivityIndicator(),
             ),
           );
         }
+        
         if (snapshot.hasError) {
           return Center(
             child: Text(
@@ -155,86 +157,12 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
             ),
           );
         }
+        
         final wholesalerData = snapshot.data;
-        return Container(
-          color: AppColors.background,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  image: DecorationImage(
-                    image: NetworkImage(wholesalerData!.logo),
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'About',
-                      style: AppTypography.heading2,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      wholesalerData.description,
-                      style: AppTypography.bodyLight,
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardBackground,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            CupertinoIcons.location_solid,
-                            color: AppColors.accent,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              wholesalerData.address,
-                              style: AppTypography.body,
-                            ),
-                          ),
-
-
-                          Text(
-                            wholesalerData.zip,
-                            style: AppTypography.bodyLight,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            wholesalerData.country,
-                            style: AppTypography.bodyLight,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Products',
-                  style: AppTypography.heading2,
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
+        return Column(
+          children: [
+            ExpandableWholesalerInfo(wholesalerData: wholesalerData! ),
+          ],
         );
       },
     );
@@ -244,7 +172,7 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
     return SliverToBoxAdapter(
       child: FutureBuilder<List<Product>>(
         future: _firebaseService.fetchAllProductsWithSalerId(
-          widget.wholesaler['saler_id'],
+          widget.wholesaler['seller_id'],
         ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -270,7 +198,7 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
             );
           }
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          if (snapshot.data!.isEmpty) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -335,6 +263,7 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
             Expanded(
               child: Stack(
                 children: [
+                  // Product Image
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.vertical(
@@ -346,22 +275,31 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
                       ),
                     ),
                   ),
+                  // Like Button with Background
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: LikeButton(
-                      productId: product.id,
-                      productDetails: {
-                        "product_image": product.images.first,
-                        "product_id": product.id,
-                        "category_path": product.categoryPath,
-                        "liked_at": product.createdAt.toIso8601String(),
-                        "is_visible": product.isVisible,
-                        "name": product.name,
-                        "product_description": product.productDescription,
-                        "currency": product.currency,
-                        "price": product.price,
-                      },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: LikeButton(
+                        productId: product.id,
+                        productDetails: {
+                          "product_image": product.images.first,
+                          "product_id": product.id,
+                          "category_path": product.categoryPath,
+                          "liked_at": product.createdAt.toIso8601String(),
+                          "is_visible": product.isVisible,
+                          "name": product.name,
+                          "product_description": product.productDescription,
+                          "currency": product.currency,
+                          "price": product.price,
+                          "saler_id": product.salerId, // Make sure this is included
+                        },
+                      ),
                     ),
                   ),
                 ],

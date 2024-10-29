@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shop_app/business%20logic/firebase_service.dart';
 import 'package:shop_app/business%20logic/models/cart_model.dart';
 import 'package:shop_app/screens/details/wholesaler_detail_screen.dart';
+import 'package:shop_app/screens/post%20checkout%20screen/post_checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
   @override
@@ -226,7 +227,7 @@ class _CartScreenState extends State<CartScreen> {
                       CupertinoButton(
                         padding: EdgeInsets.zero,
                         onPressed: () => _removeItem(item),
-                        child: Icon(
+                        child: const Icon(
                           CupertinoIcons.trash,
                           color: CupertinoColors.destructiveRed,
                           size: 20,
@@ -328,6 +329,7 @@ class _CartScreenState extends State<CartScreen> {
                   borderRadius: BorderRadius.circular(12),
                   onPressed: () {
                     // Implement checkout
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => PostCheckoutScreen(cart: cart)));
                   },
                   child: Text(
                     'Checkout',

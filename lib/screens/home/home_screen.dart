@@ -1,15 +1,22 @@
 import 'dart:ui';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shop_app/business%20logic/firebase_service.dart';
 import 'package:shop_app/business%20logic/models/product_model.dart';
+import 'package:shop_app/business%20logic/models/wholesaler_model.dart';
+import 'package:shop_app/screens/Product%20Detail%20Screen/product_detail_screen.dart';
 import 'package:shop_app/screens/cart%20screen/cart_screen.dart';
+import 'package:shop_app/screens/details/components/like_button.dart';
 import 'package:shop_app/screens/details/wholesaler_detail_screen.dart';
 import 'package:shop_app/screens/liked%20items%20screen/liked_items_screen.dart';
 import 'package:google_fonts/google_fonts.dart'; // Import Google Fonts
 import 'package:cached_network_image/cached_network_image.dart'; // Added Cached Network Image import
-import 'package:shop_app/constants.dart'; // Added constants import
+import 'package:shop_app/constants.dart';
+import 'package:shop_app/screens/previous%20orders%20of%20the%20user/order_history_screen.dart';
+import 'package:shop_app/screens/settings_screen.dart'; // Added constants import
+import 'package:firebase_auth/firebase_auth.dart'; // Added Firebase Auth import
 
 class AppColors {
   static const primary = Color(0xFF000000);
@@ -66,9 +73,21 @@ class AppTypography {
   );
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget { // Changed from StatelessWidget to StatefulWidget
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> { // New state class for HomePage
   final FirebaseService _firebaseService = FirebaseService();
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Debug print all sellers when page loads
+    _firebaseService.debugPrintAllSellers();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,50 +101,64 @@ class HomePage extends StatelessWidget {
             parent: BouncingScrollPhysics(),
           ),
           slivers: [
+            // Your existing header
             SliverPersistentHeader(
               floating: true,
-              delegate: _ModernHeaderDelegate( // New header delegate
-                onCartTap: () {
-                  // TODO: Navigate to cart screen
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(builder: (context) => CartScreen()),
-                  );
-                },
-                onLikedTap: () {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(builder: (context) => LikedProductsWidget()),
-                  );
-                },
+              delegate: _ModernHeaderDelegate(
+                onCartTap: () => Navigator.push(
+                  context,
+                  CupertinoPageRoute(builder: (context) => CartScreen()),
+                ),
+                onLikedTap: () => Navigator.push(
+                  context,
+                  CupertinoPageRoute(builder: (context) => LikedProductsWidget()),
+                ),
               ),
             ),
+            
+            // Updated StreamBuilder to use WholesalerModel
             SliverPadding(
               padding: const EdgeInsets.only(top: 8),
               sliver: SliverToBoxAdapter(
-                child: FutureBuilder<List<Map<String, dynamic>>>(
-                  future: _firebaseService.fetchWholesalers(),
+                child: StreamBuilder<List<WholesalerModel>>(  // Changed type from List<Map<String, dynamic>>
+                  stream: _firebaseService.wholesalersStream(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CupertinoActivityIndicator(radius: 14),
-                      );
-                    } else if (snapshot.hasError) {
-                      return _buildErrorWidget(snapshot.error.toString());
-                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return _buildEmptyStateWidget();
-                    } else {
-                      return ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: snapshot.data!.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 1),
-                        itemBuilder: (context, index) => _buildWholesalerItem(
-                          context,
-                          snapshot.data![index],
-                        ),
+                      return Container(
+                        height: 200,
+                        alignment: Alignment.center,
+                        child: const CupertinoActivityIndicator(radius: 14),
                       );
                     }
+
+                    if (snapshot.hasError) {
+                      print('Stream error: ${snapshot.error}');
+                      return _buildErrorWidget(snapshot.error.toString());
+                    }
+
+                    final wholesalers = snapshot.data ?? [];
+
+                    if (wholesalers.isEmpty) {
+                      return _buildEmptyState();
+                    }
+
+                    return CupertinoScrollbar(
+                      child: RefreshIndicator(
+                        onRefresh: () async {
+                          setState(() {}); // Force rebuild
+                        },
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: wholesalers.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final wholesaler = wholesalers[index];
+                            return _buildWholesalerItem(context, wholesaler);  // Pass WholesalerModel directly
+                          },
+                        ),
+                      ),
+                    );
                   },
                 ),
               ),
@@ -136,12 +169,68 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildErrorWidget(String error) { // New method for error widget
-    return Center(child: Text('Error: $error'));
+  Widget _buildEmptyState() {
+    return Container(
+      height: 200,
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            CupertinoIcons.shopping_cart,
+            size: 48,
+            color: CupertinoColors.systemGrey,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No Wholesalers Available',
+            style: AppTypography.heading3,
+          ),
+          const SizedBox(height: 8),
+          CupertinoButton(
+            child: Text('Refresh'),
+            onPressed: () {
+              _firebaseService.debugPrintAllSellers();
+              setState(() {}); // Force rebuild
+            },
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildEmptyStateWidget() { // New method for empty state widget
-    return const Center(child: Text('No wholesalers found'));
+  // Updated error widget
+  Widget _buildErrorWidget(String error) {
+    return Container(
+      height: 200,
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            CupertinoIcons.exclamationmark_circle,
+            size: 48,
+            color: CupertinoColors.systemRed,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Error Loading Wholesalers',
+            style: AppTypography.heading3,
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              error,
+              style: AppTypography.bodyLight,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildWholesalerList(BuildContext context, List<Map<String, dynamic>> wholesalers) {
@@ -149,13 +238,15 @@ class HomePage extends StatelessWidget {
       shrinkWrap: true,
       itemCount: wholesalers.length,
       itemBuilder: (context, index) {
-        final wholesaler = wholesalers[index];
+        final wholesalerMap = wholesalers[index];
+        final wholesaler = WholesalerModel.fromFirestore(wholesalerMap, wholesalerMap['id']);
         return _buildWholesalerItem(context, wholesaler);
       },
     );
   }
 
-  Widget _buildWholesalerItem(BuildContext context, Map<String, dynamic> wholesaler) {
+  // Updated wholesaler item builder
+  Widget _buildWholesalerItem(BuildContext context, WholesalerModel wholesaler) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -177,100 +268,240 @@ class HomePage extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildOptimizedImage(wholesaler['logo']),
+                _buildOptimizedImage(wholesaler.logoUrl),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        wholesaler['company_name'] ?? 'Unknown',
+                       wholesaler.name ?? "unknown",
                         style: AppTypography.heading3,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
-                      const SizedBox(height: 8),
+                      // Added phone display
+                      if (wholesaler.phone.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          wholesaler.phone,
+                          style: AppTypography.bodyLight,
+                        ),
+                      ],
+                      // Added email display
+                      if (wholesaler.email.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          wholesaler.email,
+                          style: AppTypography.bodyLight,
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          FutureBuilder<List<Product>>(
-            future: _firebaseService.fetchAllProductsWithSalerId(wholesaler['saler_id']),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CupertinoActivityIndicator());
-              } else if (snapshot.hasError) {
-                return const Text('Error loading products');
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Text('No products available');
-              } else {
+          if (wholesaler.sellerId.isNotEmpty) ...[ // Changed condition
+            const SizedBox(height: 16),
+            FutureBuilder<List<Product>>(
+              future: _firebaseService.fetchAllProductsWithSalerId(wholesaler.sellerId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: CupertinoActivityIndicator(),
+                    ),
+                  );
+                }
+                
+                if (snapshot.hasError) {
+                  print('Error loading products: ${snapshot.error}');
+                  return const SizedBox.shrink();
+                }
+                
+                final products = snapshot.data ?? [];
+                if (products.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                
                 return SizedBox(
-                  height: 120,
+                  height: 120, // Increased height to accommodate product info
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: snapshot.data!.length,
-                    itemBuilder: (context, index) {
-                      final product = snapshot.data![index];
-                      return _buildProductItem(product, context);
-                    },
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: products.length,
+                    itemBuilder: (context, index) => _buildProductItem(
+                      products[index],
+                      context,
+                    ),
                   ),
                 );
-              }
-            },
-          ),
-          const SizedBox(height: 8), // Added spacing before address
-          // New container for address, zip, and country
+              },
+            ),
+          ],
+          const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               color: AppColors.cardBackground,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.border),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  CupertinoIcons.location_solid,
-                  color: AppColors.accent,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    wholesaler['adress'] ?? 'No address', // Use wholesaler address
-                    style: AppTypography.body,
-                  ),
-                ),
                 Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              const SizedBox(),
-              CupertinoButton(
-                
-                padding: EdgeInsets.zero,
-                minSize: 0,
-                child: Text('View Details', style: GoogleFonts.poppins( // Updated to use Poppins
-                  fontSize: 16, // Font size
-                  fontWeight: FontWeight.bold, // Set to bold for a modern look
-                  color: Colors.black, // Set text color to black
-                  decoration: TextDecoration.underline, // Add underline
-                )),
-                onPressed: () {
-                  Navigator.push(context, CupertinoPageRoute(builder: (context) => WholesalerDetailScreen(wholesaler: wholesaler))); // Changed to CupertinoPageRoute
-                },
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.06, width: MediaQuery.of(context).size.width * 0.06,)
-            ],
-          ),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      CupertinoIcons.location_solid,
+                      color: AppColors.accent,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _formatAddress(wholesaler.address),
+                        style: AppTypography.body,
+                      ),
+                    ),
+                  ],
+                ),
+                if (_isOpenNow(wholesaler.workingHours)) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Open Now',
+                        style: AppTypography.bodyLight.copyWith(
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      minSize: 0,
+                      child: Text(
+                        'View Details',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          CupertinoPageRoute(
+                            builder: (context) => WholesalerDetailScreen(
+                              wholesaler: wholesaler.toFirestore(),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
-         
+          const SizedBox(height: 16),
         ],
       ),
+    );
+  }
+
+  // New method for company logo, full address, and open status
+  Widget _buildCompanyLogo(WholesalerModel wholesaler) {
+    String? logoUrl = wholesaler.logoUrl;
+    return _buildOptimizedImage(
+      logoUrl,
+      width: 80,
+      height: 80,
+    );
+  }
+
+  String _formatAddress(AddressDetails address) {
+    final parts = [
+      if (address.addressOfCompany.isNotEmpty) address.addressOfCompany,
+      if (address.city.isNotEmpty) address.city,
+      if (address.country.isNotEmpty) address.country,
+    ];
+    return parts.isNotEmpty ? parts.join(', ') : 'No address available';
+  }
+
+  bool _isOpenNow(WorkingHours workingHours) {
+    final now = DateTime.now();
+    final currentDay = now.weekday;
+    
+    DayHours? dayHours;
+    switch (currentDay) {
+      case DateTime.monday:
+        dayHours = workingHours.monday;
+        break;
+      case DateTime.tuesday:
+        dayHours = workingHours.tuesday;
+        break;
+      case DateTime.wednesday:
+        dayHours = workingHours.wednesday;
+        break;
+      case DateTime.thursday:
+        dayHours = workingHours.thursday;
+        break;
+      case DateTime.friday:
+        dayHours = workingHours.friday;
+        break;
+      case DateTime.saturday:
+        dayHours = workingHours.saturday;
+        break;
+      case DateTime.sunday:
+        dayHours = workingHours.sunday;
+        break;
+    }
+
+    if (dayHours == null || dayHours.open.isEmpty || dayHours.close.isEmpty) {
+      return false;
+    }
+
+    try {
+      final openTime = _parseTimeString(dayHours!.open);
+      final closeTime = _parseTimeString(dayHours.close);
+      final currentTime = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+
+      return currentTime.isAfter(openTime) && currentTime.isBefore(closeTime);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  DateTime _parseTimeString(String timeString) {
+    final parts = timeString.split(':');
+    final now = DateTime.now();
+    return DateTime(
+      now.year,
+      now.month,
+      now.day,
+      int.parse(parts[0]),
+      int.parse(parts[1]),
     );
   }
 
@@ -320,34 +551,87 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildProductItem(Product product, BuildContext context) { // Updated to use _buildOptimizedImage
-    return Container(
-      width: MediaQuery.of(context).size.width * 0.9,
+Widget _buildProductItem(Product product, BuildContext context) {
+  final double itemSize = MediaQuery.of(context).size.width * 0.25; // 25% of screen width
+  
+  return GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        CupertinoPageRoute(
+          builder: (context) => ProductDetailScreen(product: product),
+        ),
+      );
+    },
+    child: Container(
+      width: itemSize,
+      height: itemSize,
       margin: const EdgeInsets.only(right: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.text.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: product.images.map((image) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: _buildOptimizedImage( // Updated to use optimized image method
-                      image,
-                      width: 100,
-                      height: 100,
-                    ),
-                  );
-                }).toList(),
+          // Image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              product.images.isNotEmpty ? product.images.first : 'placeholder_url',
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return const Center(
+                  child: CupertinoActivityIndicator(),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                CupertinoIcons.photo,
+                color: AppColors.textLight,
+              ),
+            ),
+          ),
+          
+          // Optional: Like button overlay
+          Positioned(
+            top: 4,
+            right: 4,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.3),
+                shape: BoxShape.circle,
+              ),
+              child: LikeButton(
+                productId: product.id,
+                productDetails: {
+                  "product_image": product.images.first,
+                  "product_id": product.id,
+                  "category_path": product.categoryPath,
+                  "liked_at": product.createdAt.toIso8601String(),
+                  "is_visible": product.isVisible,
+                  "name": product.name,
+                  "product_description": product.productDescription,
+                  "currency": product.currency,
+                  "price": product.price,
+                  "saler_id": product.salerId,
+                },
               ),
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildProductImage(String imageUrl) { // Updated method for product image
     return Container(
@@ -438,12 +722,32 @@ class _ModernHeaderDelegate extends SliverPersistentHeaderDelegate { // New clas
                         icon: CupertinoIcons.cart,
                         badgeCount: 0, // Replace with actual cart count
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 12),
                       _buildIconButton(
                         onTap: onLikedTap,
                         icon: CupertinoIcons.heart,
                         badgeCount: null,
                         iconColor: CupertinoColors.systemPink,
+                      ),
+                         const SizedBox(width: 12),
+                      _buildIconButton(
+                        onTap: () {
+                          Navigator.push(context, CupertinoPageRoute(builder: (context) => OrderHistoryScreen()));
+                        },
+                        icon: CupertinoIcons.time,
+                        badgeCount: null,
+                        iconColor: const Color.fromARGB(255, 0, 0, 0),
+                      ),
+                        const SizedBox(width: 12),
+
+                      _buildIconButton(
+                        onTap: () {
+                          Navigator.push(context, CupertinoPageRoute(builder: (context) => 
+                           SettingsScreen()));
+                        },
+                        icon: CupertinoIcons.settings,
+                        badgeCount: null,
+                        iconColor: const Color.fromARGB(255, 0, 0, 0),
                       ),
                     ],
                   ),
@@ -496,3 +800,4 @@ Widget _buildIconButton({
     ),
   );
 }
+

@@ -5,6 +5,7 @@ import 'package:shop_app/business%20logic/firebase_service.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:shop_app/screens/details/components/like_button.dart';
 import 'dart:ui'; // Add this import for ImageFilter
+import 'package:shop_app/business%20logic/models/cart_model.dart'; // New import for CartItem model
 
 class ProductDetailScreen extends StatefulWidget {
   const ProductDetailScreen({super.key, required this.product});
@@ -19,13 +20,73 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int quantity = 1;
   int selectedImageIndex = 0;
   CarouselSliderController _carouselController = CarouselSliderController();
+  late Stream<int> _cartQuantityStream; // Added stream for cart quantity
 
-  Future<void> _addToCart() async {
+  @override
+  void initState() {
+    super.initState();
+    // Create a stream for the cart quantity of this product
+    _cartQuantityStream = _firebaseService.getCartStream().map((cart) {
+      final cartItem = cart.items.firstWhere(
+        (item) => item.productId == widget.product.id,
+        orElse: () => CartItem( // Default CartItem if not found
+          productId: widget.product.id,
+          name: widget.product.name,
+          price: widget.product.price,
+          currency: widget.product.currency,
+          image: widget.product.images.first,
+          quantity: 0, salerId: widget.product.salerId,
+        ),
+      );
+      return cartItem.quantity;
+    });
+
+    // Initialize the quantity from cart
+    _cartQuantityStream.first.then((cartQuantity) {
+      if (cartQuantity > 0 && mounted) {
+        setState(() {
+          quantity = cartQuantity;
+        });
+      }
+    });
+  }
+
+  Future<void> _updateCartQuantity(int newQuantity) async { // New method to update cart quantity
+    if (newQuantity <= 0) return;
+    
+    setState(() {
+      quantity = newQuantity;
+    });
+
+    try {
+      if (newQuantity > 0) {
+        await _firebaseService.updateCartItemQuantity(widget.product.id, newQuantity);
+      } else {
+        await _firebaseService.removeFromCart(widget.product.id);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update quantity: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      // Revert the quantity if update fails
+      setState(() {
+        quantity = quantity; // This line seems redundant, consider removing it
+      });
+    }
+  }
+
+  Future<void> _addToCart() async { // Updated method to handle adding/updating cart
     try {
       await _firebaseService.addToCart(widget.product, quantity, context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Added to cart'),
+          content: Text(quantity > 0 
+            ? 'Updated cart quantity' 
+            : 'Added to cart'
+          ),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
@@ -33,7 +94,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to add to cart: $e'),
+          content: Text('Failed to update cart: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -96,12 +157,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   child: GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
-                      padding: EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.5),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.close,
                         color: Colors.white,
                         size: 24,
@@ -115,14 +176,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     top: 16,
                     right: 16,
                     child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
                         '${widget.product.images.indexOf(image) + 1}/${widget.product.images.length}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
@@ -229,7 +290,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                         );
                       },
-                      errorBuilder: (context, error, stackTrace) => Center(
+                      errorBuilder: (context, error, stackTrace) => const Center(
                         child: Icon(
                           Icons.error_outline,
                           size: 32,
@@ -352,66 +413,74 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildQuantitySelector() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'Quantity',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+    return StreamBuilder<int>( // Updated to use StreamBuilder
+      stream: _cartQuantityStream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        }
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(16),
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Quantity',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                _buildQuantityButton(
-                  icon: Icons.remove,
-                  onPressed: () {
-                    if (quantity > 1) {
-                      setState(() => quantity--);
-                    }
-                  },
-                ),
-                Container(
-                  width: 40,
-                  alignment: Alignment.center,
-                  child: Text(
-                    '$quantity',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
+                  ],
                 ),
-                _buildQuantityButton(
-                  icon: Icons.add,
-                  onPressed: () {
-                    setState(() => quantity++);
-                  },
+                child: Row(
+                  children: [
+                    _buildQuantityButton(
+                      icon: Icons.remove,
+                      onPressed: () {
+                        if (quantity > 1) {
+                          setState(() => quantity--);
+                        }
+                      },
+                    ),
+                    Container(
+                      width: 40,
+                      alignment: Alignment.center,
+                      child: Text(
+                        '$quantity',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    _buildQuantityButton(
+                      icon: Icons.add,
+                      onPressed: () {
+                        setState(() => quantity++);
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
