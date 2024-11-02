@@ -11,7 +11,7 @@ class LikedProductsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Liked Products', style: TextStyle(color: Colors.black87)),
+        title: Text('Polubione produkty', style: TextStyle(color: Colors.black87)),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: IconThemeData(color: Colors.black87),

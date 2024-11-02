@@ -183,15 +183,15 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
           ),
           const SizedBox(height: 16),
           Text(
-            'No Wholesalers Available',
+            'Brak dostępnych hurtowników',
             style: AppTypography.heading3,
           ),
           const SizedBox(height: 8),
           CupertinoButton(
-            child: Text('Refresh'),
+            child: Text('Odśwież'),
             onPressed: () {
               _firebaseService.debugPrintAllSellers();
-              setState(() {}); // Force rebuild
+              setState(() {}); // Wymuś ponowne zbudowanie
             },
           ),
         ],
@@ -214,7 +214,7 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
           ),
           const SizedBox(height: 16),
           Text(
-            'Error Loading Wholesalers',
+            'Błąd podczas ładowania hurtowników',
             style: AppTypography.heading3,
           ),
           const SizedBox(height: 8),
@@ -400,7 +400,7 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
                       padding: EdgeInsets.zero,
                       minSize: 0,
                       child: Text(
-                        'View Details',
+                        'Zobacz szczegóły',
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

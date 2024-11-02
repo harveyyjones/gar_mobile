@@ -282,7 +282,7 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                         children: [
                           // Updated Order Summary Section
                           Text(
-                            'Order Summary',
+                            'Podsumowanie zamówienia',
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
@@ -382,16 +382,16 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildSection(
-                                  'Company Information',
+                                  'Informacje o firmie',
                                   [
                                     _buildTextField(
                                       controller: _companyNameController,
-                                      label: 'Company Name',
+                                      label: 'Nazwa firmy',
                                       required: true,
                                     ),
                                     _buildTextField(
                                       controller: _addressController,
-                                      label: 'Company Address',
+                                      label: 'Adres firmy',
                                       required: true,
                                     ),
                                     Row(
@@ -400,7 +400,7 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                                           flex: 2,
                                           child: _buildTextField(
                                             controller: _cityController,
-                                            label: 'City',
+                                            label: 'Miasto',
                                             required: true,
                                           ),
                                         ),
@@ -408,7 +408,7 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                                         Expanded(
                                           child: _buildTextField(
                                             controller: _zipController,
-                                            label: 'ZIP Code',
+                                            label: 'Kod pocztowy',
                                             required: true,
                                           ),
                                         ),
@@ -416,17 +416,17 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                                     ),
                                     _buildTextField(
                                       controller: _countryController,
-                                      label: 'Country',
+                                      label: 'Kraj',
                                       required: true,
                                     ),
                                   ],
                                 ),
                                 _buildSection(
-                                  'Business Information',
+                                  'Informacje o działalności',
                                   [
                                     _buildDropdown(
                                       value: _selectedBusinessEntity,
-                                      label: 'Business Entity Type',
+                                      label: 'Typ podmiotu gospodarczego',
                                       items: _businessEntityTypes,
                                       onChanged: (value) {
                                         setState(() => _selectedBusinessEntity = value);
@@ -435,35 +435,35 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                                     ),
                                     _buildTextField(
                                       controller: _nipNumberController,
-                                      label: 'NIP Number',
+                                      label: 'Numer NIP',
                                       required: true,
                                     ),
                                     _buildTextField(
                                       controller: _euVatController,
-                                      label: 'EU VAT Number',
+                                      label: 'Numer VAT UE',
                                     ),
                                     _buildTextField(
                                       controller: _taxNoController,
-                                      label: 'Tax Number',
+                                      label: 'Numer podatkowy',
                                     ),
                                     _buildTextField(
                                       controller: _companyRegNoController,
-                                      label: 'Company Registration Number',
+                                      label: 'Numer rejestracji firmy',
                                       required: true,
                                     ),
                                   ],
                                 ),
                                 _buildSection(
-                                  'Contact Information',
+                                  'Informacje kontaktowe',
                                   [
                                     _buildTextField(
                                       controller: _contactNameController,
-                                      label: 'Contact Person',
+                                      label: 'Osoba kontaktowa',
                                       required: true,
                                     ),
                                     _buildTextField(
                                       controller: _phoneController,
-                                      label: 'Phone',
+                                      label: 'Telefon',
                                       required: true,
                                       keyboardType: TextInputType.phone,
                                     ),
@@ -471,16 +471,16 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                                   ],
                                 ),
                                 _buildSection(
-                                  'Delivery Information',
+                                  'Informacje o dostawie',
                                   [
                                     _buildTextField(
                                       controller: _deliveryNameController,
-                                      label: 'Delivery Contact Name',
+                                      label: 'Imię i nazwisko kontaktu dostawy',
                                       required: true,
                                     ),
                                     _buildTextField(
                                       controller: _deliveryAddressController,
-                                      label: 'Delivery Address',
+                                      label: 'Adres dostawy',
                                       required: true,
                                     ),
                                     Row(
@@ -489,7 +489,7 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                                           flex: 2,
                                           child: _buildTextField(
                                             controller: _deliveryCityController,
-                                            label: 'City',
+                                            label: 'Miasto',
                                             required: true,
                                           ),
                                         ),
@@ -497,7 +497,7 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                                         Expanded(
                                           child: _buildTextField(
                                             controller: _deliveryZipController,
-                                            label: 'ZIP Code',
+                                            label: 'Kod pocztowy',
                                             required: true,
                                           ),
                                         ),
@@ -505,22 +505,22 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                                     ),
                                     _buildTextField(
                                       controller: _deliveryCountryController,
-                                      label: 'Country',
+                                      label: 'Kraj',
                                       required: true,
                                     ),
                                     _buildTextField(
                                       controller: _deliveryPhoneController,
-                                      label: 'Phone',
+                                      label: 'Telefon',
                                       required: true,
                                       keyboardType: TextInputType.phone,
                                     ),
                                     _buildTextField(
                                       controller: _cargoCompanyController,
-                                      label: 'Preferred Cargo Company',
+                                      label: 'Preferowana firma transportowa',
                                     ),
                                     _buildTextField(
                                       controller: _cargoCustomerNoController,
-                                      label: 'Cargo Customer Number',
+                                      label: 'Numer klienta transportu',
                                     ),
                                   ],
                                 ),

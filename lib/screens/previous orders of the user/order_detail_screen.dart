@@ -50,7 +50,7 @@ class OrderDetailScreen extends StatelessWidget {
             _buildOrderHeader(),
             const SizedBox(height: 24),
             _buildSection(
-              title: 'Items',
+              title: 'Pozycje',
               child: Column(
                 children: [
                   ...items.map((item) => _buildOrderItem(item, screenWidth)),
@@ -59,7 +59,7 @@ class OrderDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             _buildSection(
-              title: 'Delivery Address',
+              title: 'Adres dostawy',
               child: _buildAddressInfo(deliveryAddress),
             ),
             const SizedBox(height: 24),
@@ -73,39 +73,39 @@ class OrderDetailScreen extends StatelessWidget {
             //   child: _buildCustomerInfo(customerInfo),
             // ),
             _buildSection(
-              title: 'Payment Adress',
+              title: 'Adres płatności',
               child: Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              'Payment Address',
-              style: GoogleFonts.poppins(
-                color: Colors.grey[600],
-                fontSize: 14,
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 140,
+                      child: Text(
+                        'Adres płatności',
+                        style: GoogleFonts.poppins(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'PL 2596578485484',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              'PL 2596578485484',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
             ),
             const SizedBox(height: 24),
             if (orderData['statusHistory'] != null)
               _buildSection(
-                title: 'Order Status History',
+                title: 'Historia statusu zamówienia',
                 child: _buildStatusHistory(
                   orderData['statusHistory'] as List<dynamic>
                 ),
@@ -186,37 +186,37 @@ class OrderDetailScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildInfoRow(
-          label: 'Contact Name',
+          label: 'Nazwa kontaktowa',
           value: address['name'] ?? '',
         ),
         _buildInfoRow(
-          label: 'Address',
+          label: 'Adres',
           value: address['adress'] ?? '',
         ),
         _buildInfoRow(
-          label: 'City',
+          label: 'Miasto',
           value: address['city'] ?? '',
         ),
         _buildInfoRow(
-          label: 'Country',
+          label: 'Kraj',
           value: address['country'] ?? '',
         ),
         _buildInfoRow(
-          label: 'ZIP Code',
+          label: 'Kod pocztowy',
           value: address['zip'] ?? '',
         ),
         _buildInfoRow(
-          label: 'Phone',
+          label: 'Telefon',
           value: address['phone'] ?? '',
         ),
         if (address['cargoCompany'] != null && address['cargoCompany'].isNotEmpty)
           _buildInfoRow(
-            label: 'Cargo Company',
+            label: 'Nazwa firmy',
             value: address['cargoCompany'],
           ),
         if (address['cargoCustomerNo'] != null && address['cargoCustomerNo'].isNotEmpty)
           _buildInfoRow(
-            label: 'Cargo Customer No',
+            label: 'Numer kontaktowy',
             value: address['cargoCustomerNo'],
           ),
       ],
@@ -259,11 +259,11 @@ class OrderDetailScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildInfoRow(
-          label: 'Company Name',
+          label: 'Nazwa kontaktowa',
           value: info['companyName'] ?? '',
         ),
         _buildInfoRow(
-          label: 'Contact Person',
+          label: 'Osoba kontaktowa',
           value: info['contactName'] ?? '',
         ),
         _buildInfoRow(
@@ -271,29 +271,29 @@ class OrderDetailScreen extends StatelessWidget {
           value: info['email'] ?? '',
         ),
         _buildInfoRow(
-          label: 'Phone',
+          label: 'Telefon',
           value: info['phone'] ?? '',
         ),
         _buildInfoRow(
-          label: 'Business Entity',
+          label: 'Podmiot gospodarczy',
           value: info['businessEntity'] ?? '',
         ),
         _buildInfoRow(
-          label: 'NIP Number',
+          label: 'Numer NIP',
           value: info['nipNumber'] ?? '',
         ),
         if (info['euVatNo'] != null && info['euVatNo'].isNotEmpty)
           _buildInfoRow(
-            label: 'EU VAT Number',
+            label: 'Numer VAT UE',
             value: info['euVatNo'],
           ),
         if (info['taxNo'] != null && info['taxNo'].isNotEmpty)
           _buildInfoRow(
-            label: 'Tax Number',
+            label: 'Numer podatkowy',
             value: info['taxNo'],
           ),
         _buildInfoRow(
-          label: 'Company Registration No',
+          label: 'Numer rejestracji firmy',
           value: info['companyRegistrationNo'] ?? '',
         ),
       ],
@@ -472,7 +472,7 @@ class OrderDetailScreen extends StatelessWidget {
                     
                     const SizedBox(height: 4),
                     Text(
-                      'Placed on ${_formatDate(orderDate)}',
+                      'Złożono ${_formatDate(orderDate)}',
                       style: GoogleFonts.poppins(
                         color: Colors.grey[600],
                         fontSize: 14,
@@ -481,7 +481,7 @@ class OrderDetailScreen extends StatelessWidget {
                     // {{ edit_1 }} - Added soft trap option
                     const SizedBox(height: 4),
                     Text(
-                      'Soft Trap Option: ${orderData['softTrap'] ?? 'Not Available'}',
+                      'Opcja Soft Trap: ${orderData['softTrap'] ?? 'Niedostępna'}',
                       style: GoogleFonts.poppins(
                         color: Colors.grey[600],
                         fontSize: 14,

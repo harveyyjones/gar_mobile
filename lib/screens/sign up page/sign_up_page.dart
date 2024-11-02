@@ -281,7 +281,7 @@ class _SignUpPageState extends State<SignUpPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Welcome',
+          'Witaj',
           style: GoogleFonts.poppins(
             fontSize: 32,
             fontWeight: FontWeight.w600,
@@ -291,7 +291,7 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Create an account to continue',
+          'Utwórz konto, aby kontynuować',
           style: GoogleFonts.poppins(
             fontSize: 16,
             color: AppColors.textLight,
@@ -438,7 +438,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   ),
                 )
               : Text(
-                  'Create Account',
+                  'Utwórz konto',
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -464,7 +464,7 @@ class _SignUpPageState extends State<SignUpPage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'or',
+                'albo',
                 style: GoogleFonts.poppins(
                   color: AppColors.textLight,
                   fontSize: 14,
@@ -480,7 +480,7 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
         const SizedBox(height: 24),
         Text(
-          'Already have an account?',
+          'Już masz konto?',
           style: GoogleFonts.poppins(
             color: AppColors.textLight,
             fontSize: 14,
@@ -489,7 +489,7 @@ class _SignUpPageState extends State<SignUpPage> {
         TextButton(
           onPressed: () => Navigator.push(context, CupertinoPageRoute(builder: (context) => LoginPage())),
           child: Text(
-            'Sign In',
+            'Zaloguj się',
             style: GoogleFonts.poppins(
               color: AppColors.primary,
               fontSize: 16,

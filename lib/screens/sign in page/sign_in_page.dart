@@ -43,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
     final password = passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      _showError('Please fill in all fields');
+      _showError('Proszę wypełnić wszystkie pola');
       return;
     }
 
@@ -71,23 +71,23 @@ class _LoginPageState extends State<LoginPage> {
       String errorMessage;
       switch (e.code) {
         case 'user-not-found':
-          errorMessage = 'No user found with this email';
+          errorMessage = 'Nie znaleziono użytkownika z tym adresem e-mail';
           break;
         case 'wrong-password':
-          errorMessage = 'Wrong password provided';
+          errorMessage = 'Podano błędne hasło';
           break;
         case 'invalid-email':
-          errorMessage = 'Invalid email format';
+          errorMessage = 'Nieprawidłowy format adresu e-mail';
           break;
         case 'user-disabled':
-          errorMessage = 'This account has been disabled';
+          errorMessage = 'To konto zostało zablokowane';
           break;
         default:
-          errorMessage = 'An error occurred during login';
+          errorMessage = 'Wystąpił błąd podczas logowania';
       }
       _showError(errorMessage);
     } catch (e) {
-      _showError('An unexpected error occurred');
+      _showError('Wystąpił nieoczekiwany błąd');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -145,7 +145,7 @@ class _LoginPageState extends State<LoginPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Welcome back',
+          'Witaj z powrotem',
           style: GoogleFonts.poppins(
             fontSize: 32,
             fontWeight: FontWeight.w600,
@@ -155,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Sign in to your account',
+          'Zaloguj się na swoje konto',
           style: GoogleFonts.poppins(
             fontSize: 16,
             color: AppColors.textLight,
@@ -202,7 +202,7 @@ class _LoginPageState extends State<LoginPage> {
               padding: EdgeInsets.zero,
             ),
             child: Text(
-              'Forgot Password?',
+              'Zapomniałeś hasła?',
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -299,7 +299,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 )
               : Text(
-                  'Sign In',
+                  'Zaloguj się',
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -346,7 +346,7 @@ class _LoginPageState extends State<LoginPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              "Don't have an account? ",
+              "Nie masz konta? ",
               style: GoogleFonts.poppins(
                 color: AppColors.textLight,
                 fontSize: 14,

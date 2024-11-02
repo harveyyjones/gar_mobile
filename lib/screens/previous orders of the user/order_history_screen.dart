@@ -19,7 +19,7 @@ class OrderHistoryScreen extends StatelessWidget {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: Text(
-          'My Orders',
+          'Moje zamówienia',
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
           ),
@@ -34,7 +34,7 @@ class OrderHistoryScreen extends StatelessWidget {
             print('Error loading orders: ${snapshot.error}');
             return Center(
               child: Text(
-                'Error loading orders',
+                'Błąd ładowania zamówień',
                 style: GoogleFonts.poppins(color: Colors.red),
               ),
             );
@@ -58,7 +58,7 @@ class OrderHistoryScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No orders yet',
+                    'Brak zamówień',
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       color: Colors.grey[600],
@@ -66,7 +66,7 @@ class OrderHistoryScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Your order history will appear here',
+                    'Twoja historia zamówień pojawi się tutaj',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       color: Colors.grey[500],
@@ -124,7 +124,7 @@ class OrderHistoryScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Order #${orderId?.substring(0, 8) ?? "Unknown"}',
+                    'Zamówienie #${orderId?.substring(0, 8) ?? "Nieznane"}',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
@@ -135,7 +135,7 @@ class OrderHistoryScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Ordered on ${_formatDate(orderDate)}',
+                'Zamówiono ${_formatDate(orderDate)}',
                 style: GoogleFonts.poppins(
                   color: Colors.grey[600],
                   fontSize: 14,
@@ -149,7 +149,7 @@ class OrderHistoryScreen extends StatelessWidget {
               if (items.length > 2) ...[
                 const SizedBox(height: 8),
                 Text(
-                  '+ ${items.length - 2} more items',
+                  '+ ${items.length - 2} więcej przedmiotów',
                   style: GoogleFonts.poppins(
                     color: Colors.grey[600],
                     fontSize: 14,
@@ -161,7 +161,7 @@ class OrderHistoryScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Total',
+                    'Całkowity',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,

@@ -140,7 +140,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   size: 32, color: Colors.white),
                               SizedBox(height: 8),
                               Text(
-                                'Failed to load image',
+                                'Nie udało się załadować obrazu',
                                 style: TextStyle(color: Colors.white),
                               ),
                             ],
@@ -417,7 +417,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       stream: _cartQuantityStream,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
+          return Text('Błąd: ${snapshot.error}');
         }
         return Container(
           padding: const EdgeInsets.all(16),
@@ -429,7 +429,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Quantity',
+                'Ilość',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -508,7 +508,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Description',
+          'Opis',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -562,7 +562,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       Padding(
                         padding: const EdgeInsets.only(left: 10),
                         child: Text(
-                          'Total Price',
+                          'Łączna cena',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -603,7 +603,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           Icon(Icons.shopping_cart_outlined, size: 20),
                           SizedBox(width: 8),
                           Text(
-                            'Add to Cart',
+                            'Dodaj do koszyka',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,

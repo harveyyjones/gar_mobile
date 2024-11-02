@@ -88,7 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await showCupertinoDialog(
           context: context,
           builder: (BuildContext dialogContext) => CupertinoAlertDialog(
-            title: const Text('Sign Out Error'),
+            title: const Text('Błąd wylogowania'),
             content: Text(e.toString()),
             actions: [
               CupertinoDialogAction(
@@ -112,8 +112,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showCupertinoDialog(
       context: context,
       builder: (BuildContext dialogContext) => CupertinoAlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
+        title: const Text('Wylogowanie'),
+        content: const Text('Czy na pewno chcesz się wylogować?'),
         actions: [
           CupertinoDialogAction(
             isDestructiveAction: true,
@@ -123,10 +123,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Navigator.pop(dialogContext);
                     await _handleSignOut(context);
                   },
-            child: const Text('Sign Out'),
+            child: const Text('Wylogowanie'),
           ),
           CupertinoDialogAction(
-            child: const Text('Cancel'),
+            child: const Text('Anuluj'),
             onPressed: () => Navigator.pop(dialogContext),
           ),
         ],

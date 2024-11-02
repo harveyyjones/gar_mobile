@@ -109,111 +109,25 @@ class _MyAppState extends State<MyApp> { // New state class for MyApp
 }
 
 class AuthWrapper extends StatelessWidget {
-  final Uri? initialDeepLink; // Declare the parameter
-  final AuthService _authService = AuthService();
   final LoginLogic _loginLogic = LoginLogic();
   final SignUpLogic _signUpLogic = SignUpLogic();
 
-  // Update constructor to use named parameter
-  AuthWrapper({
-    Key? key,
-    this.initialDeepLink, // Add named parameter
-  }) : super(key: key);
-
-  Future<void> _handleDeepLink(BuildContext context, Uri deepLink) async {
-    // ... existing code ...l
-  }
+  AuthWrapper({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, authSnapshot) {
-        if (authSnapshot.connectionState == ConnectionState.waiting) {
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CupertinoActivityIndicator());
         }
 
-        if (!authSnapshot.hasData) {
-          return AuthPage(loginLogic: _loginLogic, signUpLogic: _signUpLogic);
+        if (snapshot.hasData) {
+          return HomePage();
         }
 
-        // User is logged in, now determine their type
-        return StreamBuilder<String>(
-          stream: _authService.getUserTypeStream(),
-          builder: (context, userTypeSnapshot) {
-            if (userTypeSnapshot.connectionState == ConnectionState.waiting) {
-              return Container(
-                color: Colors.white,
-                child: const Center(
-                  child: Center(child: CupertinoActivityIndicator()),
-                ),
-              );
-            }
-
-            // Handle errors
-            if (userTypeSnapshot.hasError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, size: 48, color: Colors.red),
-                    SizedBox(height: 16),
-                    Text('Error loading profile'),
-                    SizedBox(height: 8),
-                    CupertinoButton(
-                      child: Text('Try Again'),
-                      onPressed: () {
-                        // Force refresh
-                        FirebaseAuth.instance.currentUser?.reload();
-                      },
-                    ),
-                    CupertinoButton(
-                      child: Text('Sign Out'),
-                      onPressed: () => _authService.signOut(),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            switch (userTypeSnapshot.data) {
-              case 'user':
-                return HomePage();
-              case 'seller':
-                return HomePage();
-              case 'undefined':
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Account setup incomplete'),
-                      CupertinoButton(
-                        child: Text('Sign Out'),
-                        onPressed: () => _authService.signOut(),
-                      ),
-                    ],
-                  ),
-                );
-              case 'error':
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('Error determining account type'),
-                      CupertinoButton(
-                        child: Text('Try Again'),
-                        onPressed: () {
-                          FirebaseAuth.instance.currentUser?.reload();
-                        },
-                      ),
-                    ],
-                  ),
-                );
-              default:
-                return AuthPage(loginLogic: _loginLogic, signUpLogic: _signUpLogic);
-            }
-          },
-        );
+        return AuthPage(loginLogic: _loginLogic, signUpLogic: _signUpLogic);
       },
     );
   }
@@ -296,7 +210,7 @@ class AuthPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Welcome to',
+          'Witamy w',
           style: GoogleFonts.poppins(
             fontSize: 32,
             fontWeight: FontWeight.w600,
@@ -304,7 +218,7 @@ class AuthPage extends StatelessWidget {
           ),
         ),
         Text(
-          'GARDENIA MOBILE',
+          'Loris Mobile',
           style: GoogleFonts.montserrat(
             fontSize: 40,
             fontWeight: FontWeight.w700,
@@ -314,7 +228,7 @@ class AuthPage extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          'Your Premium Wholesale Perfume Marketplace',
+          'Twój premium rynek hurtowy perfum.',
           style: GoogleFonts.poppins(
             fontSize: 16,
             color: AppColors.textLight,
@@ -330,7 +244,7 @@ class AuthPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildPrimaryButton(
-          'Sign In',
+          'Zaloguj się',
           onPressed: () {
             Navigator.push(
               context,
@@ -356,7 +270,7 @@ class AuthPage extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _buildSecondaryButton(
-          'Create Account',
+          'Utwórz konto',
           onPressed: () {
             Navigator.push(
               context,
@@ -448,7 +362,7 @@ class AuthPage extends StatelessWidget {
   //           Padding(
   //             padding: const EdgeInsets.symmetric(horizontal: 16),
   //             child: Text(
-  //               'Or continue with',
+  //               'Lub kontynuuj z',
   //               style: GoogleFonts.poppins(
   //                 color: AppColors.textLight,
   //                 fontSize: 14,
