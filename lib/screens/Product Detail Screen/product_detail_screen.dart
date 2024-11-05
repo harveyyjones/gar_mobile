@@ -29,7 +29,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     _cartQuantityStream = _firebaseService.getCartStream().map((cart) {
       final cartItem = cart.items.firstWhere(
         (item) => item.productId == widget.product.id,
-        orElse: () => CartItem( // Default CartItem if not found
+        orElse: () => CartItem(
+          // Default CartItem if not found
           productId: widget.product.id,
           name: widget.product.name,
           price: widget.product.price,
@@ -51,16 +52,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     });
   }
 
-  Future<void> _updateCartQuantity(int newQuantity) async { // New method to update cart quantity
+  Future<void> _updateCartQuantity(int newQuantity) async {
+    // New method to update cart quantity
     if (newQuantity <= 0) return;
-    
+
     setState(() {
       quantity = newQuantity;
     });
 
     try {
       if (newQuantity > 0) {
-        await _firebaseService.updateCartItemQuantity(widget.product.id, newQuantity);
+        await _firebaseService.updateCartItemQuantity(
+            widget.product.id, newQuantity);
       } else {
         await _firebaseService.removeFromCart(widget.product.id);
       }
@@ -78,17 +81,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
-  Future<void> _addToCart() async { // Updated method to handle adding/updating cart
+  Future<void> _addToCart() async {
+    // Updated method to handle adding/updating cart
     try {
       await _firebaseService.addToCart(widget.product, quantity, context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(quantity > 0 
-            ? 'Updated cart quantity' 
-            : 'Added to cart'
-          ),
+          content:
+              Text(quantity > 0 ? 'Updated cart quantity' : 'Added to cart'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     } catch (e) {
@@ -132,7 +135,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ),
                           );
                         },
-                        errorBuilder: (context, error, stackTrace) => const Center(
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -176,7 +180,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     top: 16,
                     right: 16,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(16),
@@ -234,23 +239,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       pinned: true,
       backgroundColor: Colors.white,
       elevation: 0,
-      leading: GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
-          child: const Icon(Icons.arrow_back, color: Colors.black),
-        ),
+      leading: IconButton(
+        onPressed: () => Navigator.pop(context),
+        icon:
+            const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.black),
       ),
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
@@ -290,7 +282,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                         );
                       },
-                      errorBuilder: (context, error, stackTrace) => const Center(
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Center(
                         child: Icon(
                           Icons.error_outline,
                           size: 32,
@@ -302,7 +295,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 );
               },
             ),
-            
+
             // Navigation Arrows
             if (widget.product.images.length > 1)
               Positioned.fill(
@@ -312,7 +305,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     _buildNavigationArrow(
                       icon: Icons.arrow_back_ios_new,
                       onTap: () {
-                        if (selectedImageIndex > 0) { // Check to prevent going back if at the first image
+                        if (selectedImageIndex > 0) {
+                          // Check to prevent going back if at the first image
                           _carouselController.previousPage(
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut,
@@ -323,7 +317,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     _buildNavigationArrow(
                       icon: Icons.arrow_forward_ios,
                       onTap: () {
-                        if (selectedImageIndex < widget.product.images.length - 1) { // Check to prevent going forward if at the last image
+                        if (selectedImageIndex <
+                            widget.product.images.length - 1) {
+                          // Check to prevent going forward if at the last image
                           _carouselController.nextPage(
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut,
@@ -354,7 +350,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: widget.product.images.asMap().entries.map((entry) {
+                        children:
+                            widget.product.images.asMap().entries.map((entry) {
                           return Container(
                             width: 8,
                             height: 8,
@@ -413,7 +410,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildQuantitySelector() {
-    return StreamBuilder<int>( // Updated to use StreamBuilder
+    return StreamBuilder<int>(
+      // Updated to use StreamBuilder
       stream: _cartQuantityStream,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -550,7 +548,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           topRight: Radius.circular(30),
         ),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0), // Use blur instead of matrix
+          filter: ImageFilter.blur(
+              sigmaX: 10.0, sigmaY: 10.0), // Use blur instead of matrix
           child: SafeArea(
             child: Row(
               children: [
@@ -586,7 +585,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 Expanded(
                   child: SizedBox(
                     height: 60,
-                    child: ElevatedButton( // Changed to ElevatedButton
+                    child: ElevatedButton(
                       onPressed: () {
                         HapticFeedback.mediumImpact();
                         _addToCart();
@@ -597,20 +596,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.shopping_cart_outlined, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Dodaj do koszyka',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                      child: LayoutBuilder(builder: (context, constraints) {
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.shopping_cart_outlined,
+                                size: constraints.maxWidth * 0.08),
+                            SizedBox(width: constraints.maxWidth * 0.03),
+                            Text(
+                              'Dodaj do koszyka',
+                              style: TextStyle(
+                                fontSize: constraints.maxWidth * 0.06,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        );
+                      }),
                     ),
                   ),
                 ),
@@ -636,7 +639,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.3),
           shape: BoxShape.circle,
-          boxShadow: [ // Added shadow to the navigation arrow
+          boxShadow: [
+            // Added shadow to the navigation arrow
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
               blurRadius: 8,

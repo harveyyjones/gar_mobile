@@ -149,6 +149,10 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
           widget.wholesaler['company_name'] ?? 'Wholesaler',
           style: AppTypography.heading2,
         ),
+        leading: CupertinoNavigationBarBackButton(
+          color: AppColors.text,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       child: SafeArea(
         child: CustomScrollView(
@@ -169,7 +173,8 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
 
   Widget _buildWholesalerInfo() {
     return FutureBuilder(
-      future: _firebaseService.fetchWholesalerById(widget.wholesaler['seller_id']),
+      future:
+          _firebaseService.fetchWholesalerById(widget.wholesaler['seller_id']),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
@@ -179,7 +184,7 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
             ),
           );
         }
-        
+
         if (snapshot.hasError) {
           return Center(
             child: Text(
@@ -188,11 +193,11 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
             ),
           );
         }
-        
+
         final wholesalerData = snapshot.data;
         return Column(
           children: [
-            ExpandableWholesalerInfo(wholesalerData: wholesalerData! ),
+            ExpandableWholesalerInfo(wholesalerData: wholesalerData!),
           ],
         );
       },
@@ -214,7 +219,7 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
               ),
             );
           }
-          
+
           if (snapshot.hasError) {
             return Center(
               child: Padding(
@@ -243,8 +248,10 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
           // Filter products based on the last category
           final filteredProducts = selectedCategory == null
               ? products
-              : products.where((product) => 
-                  _getLastCategory(product.categoryPath) == selectedCategory)
+              : products
+                  .where((product) =>
+                      _getLastCategory(product.categoryPath) ==
+                      selectedCategory)
                   .toList();
 
           return Column(
@@ -284,30 +291,33 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
                         ),
                       ),
                       // Add this part to create category buttons
-                      ...categories.map((category) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: CupertinoButton(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          color: selectedCategory == category
-                              ? AppColors.accent
-                              : AppColors.accent.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(25),
-                          onPressed: () {
-                            setState(() => selectedCategory = category);
-                          },
-                          child: Text(
-                            category,
-                            style: AppTypography.body.copyWith(
-                              color: selectedCategory == category
-                                  ? Colors.white
-                                  : AppColors.accent,
-                              fontWeight: selectedCategory == category
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      )).toList(),
+                      ...categories
+                          .map((category) => Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: CupertinoButton(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  color: selectedCategory == category
+                                      ? AppColors.accent
+                                      : AppColors.accent.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(25),
+                                  onPressed: () {
+                                    setState(() => selectedCategory = category);
+                                  },
+                                  child: Text(
+                                    category,
+                                    style: AppTypography.body.copyWith(
+                                      color: selectedCategory == category
+                                          ? Colors.white
+                                          : AppColors.accent,
+                                      fontWeight: selectedCategory == category
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                              ))
+                          .toList(),
                     ],
                   ),
                 ),
@@ -340,7 +350,8 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         childAspectRatio: 0.75,
                         mainAxisSpacing: 16,
@@ -348,7 +359,8 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
                       ),
                       itemCount: filteredProducts.length,
                       itemBuilder: (context, index) {
-                        return _buildProductItem(filteredProducts[index], context);
+                        return _buildProductItem(
+                            filteredProducts[index], context);
                       },
                     ),
                   ],
@@ -424,7 +436,8 @@ class _WholesalerDetailScreenState extends State<WholesalerDetailScreen> {
                           "product_description": product.productDescription,
                           "currency": product.currency,
                           "price": product.price,
-                          "saler_id": product.salerId, // Make sure this is included
+                          "saler_id":
+                              product.salerId, // Make sure this is included
                         },
                       ),
                     ),

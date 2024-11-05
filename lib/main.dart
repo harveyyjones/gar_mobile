@@ -14,22 +14,25 @@ import 'package:firebase_auth/firebase_auth.dart'; // Added Firebase Auth import
 import 'screens/sign in page/sign_in_page.dart'; // Added Firebase import
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart'; // Added Firebase Dynamic Links import
 
-
-void main() async { // Updated main function
+void main() async {
+  // Updated main function
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget { // Changed MyApp to StatefulWidget
+class MyApp extends StatefulWidget {
+  // Changed MyApp to StatefulWidget
   const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> { // New state class for MyApp
-  final _dynamicLinkData = ValueNotifier<Uri?>(null); // Changed to use ValueNotifier for dynamic links
+class _MyAppState extends State<MyApp> {
+  // New state class for MyApp
+  final _dynamicLinkData = ValueNotifier<Uri?>(
+      null); // Changed to use ValueNotifier for dynamic links
   final AuthService _authService = AuthService();
   final LoginLogic _loginLogic = LoginLogic();
   final SignUpLogic _signUpLogic = SignUpLogic();
@@ -40,12 +43,14 @@ class _MyAppState extends State<MyApp> { // New state class for MyApp
     _initializeDynamicLinks(); // Initialize dynamic links
   }
 
-  Future<void> _initializeDynamicLinks() async { // New method to handle dynamic links
+  Future<void> _initializeDynamicLinks() async {
+    // New method to handle dynamic links
     try {
       // Handle initial dynamic link if app was terminated
-      final PendingDynamicLinkData? initialLink = 
-          await FirebaseDynamicLinks.instance.getInitialLink(); // Use the new method here
-      
+      final PendingDynamicLinkData? initialLink = await FirebaseDynamicLinks
+          .instance
+          .getInitialLink(); // Use the new method here
+
       if (initialLink != null) {
         _dynamicLinkData.value = initialLink.link;
       }
@@ -64,9 +69,10 @@ class _MyAppState extends State<MyApp> { // New state class for MyApp
     }
   }
 
-  void _handleDynamicLink(PendingDynamicLinkData data) { // New method to handle dynamic link data
+  void _handleDynamicLink(PendingDynamicLinkData data) {
+    // New method to handle dynamic link data
     final Uri deepLink = data.link;
-    
+
     // Handle navigation based on link parameters
     if (deepLink.pathSegments.contains('product')) {
       final productId = deepLink.queryParameters['id'];
@@ -81,7 +87,8 @@ class _MyAppState extends State<MyApp> { // New state class for MyApp
     }
   }
 
-  void _navigateAfterAuth(Uri deepLink) { // New method to navigate after authentication
+  void _navigateAfterAuth(Uri deepLink) {
+    // New method to navigate after authentication
     // Store the deep link to be handled after authentication
     // You can use shared preferences or other state management solution
     DynamicLinkService().setInitialLink(deepLink);
@@ -90,21 +97,23 @@ class _MyAppState extends State<MyApp> { // New state class for MyApp
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Wholesale E-commerce App', // Updated title
-      theme: ThemeData(
-        primarySwatch: Colors.blue, // Updated theme
-        textTheme: Theme.of(context).textTheme.apply(bodyColor: Constants.kTextColor),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-     home: AuthWrapper()
-      // home: ValueListenableBuilder<Uri?>(
-      //   valueListenable: _dynamicLinkData,
-      //   builder: (context, deepLink, child) {
-      //     return AuthWrapper(initialDeepLink: deepLink);
-      //   },
-      // ),
-    );
+        debugShowCheckedModeBanner: false,
+        title: 'Wholesale E-commerce App', // Updated title
+        theme: ThemeData(
+          primarySwatch: Colors.blue, // Updated theme
+          textTheme: Theme.of(context)
+              .textTheme
+              .apply(bodyColor: Constants.kTextColor),
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+        ),
+        home: AuthWrapper()
+        // home: ValueListenableBuilder<Uri?>(
+        //   valueListenable: _dynamicLinkData,
+        //   builder: (context, deepLink, child) {
+        //     return AuthWrapper(initialDeepLink: deepLink);
+        //   },
+        // ),
+        );
   }
 }
 
@@ -132,7 +141,6 @@ class AuthWrapper extends StatelessWidget {
     );
   }
 }
-
 
 class AppColors {
   static const primary = Color(0xFF0A84FF);
@@ -378,7 +386,8 @@ class AuthPage extends StatelessWidget {
   //   );
   // }
 
-  Widget _buildSocialButton(String iconPath, {required VoidCallback onPressed}) {
+  Widget _buildSocialButton(String iconPath,
+      {required VoidCallback onPressed}) {
     return Container(
       width: 56,
       height: 56,
@@ -406,4 +415,3 @@ class AuthPage extends StatelessWidget {
     );
   }
 }
-
