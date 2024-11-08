@@ -5,17 +5,16 @@ import 'package:shop_app/business%20logic/models/cart_model.dart';
 import 'package:shop_app/business%20logic/models/liked_items_model.dart';
 import 'package:shop_app/business%20logic/models/product_model.dart';
 import 'package:shop_app/business%20logic/models/wholesaler_model.dart';
+import 'package:shop_app/business_logic_rest_api/models/product.dart';
 
 class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance; // Added Firebase Auth instance
-
- 
-
-
+  final FirebaseAuth _auth =
+      FirebaseAuth.instance; // Added Firebase Auth instance
 
   // Alternative method using doc() directly if you have the ID
-  Future<WholesalerModel?> fetchWholesalerByIdDirect(String salerId) async { // New method added
+  Future<WholesalerModel?> fetchWholesalerByIdDirect(String salerId) async {
+    // New method added
     try {
       DocumentSnapshot doc = await _firestore
           .collection('sellers') // Updated collection name
@@ -34,18 +33,19 @@ class FirebaseService {
   }
 
   // Stream version for real-time updates
-  Stream<WholesalerModel?> wholesalerStream(String salerId) { // New method added
+  Stream<WholesalerModel?> wholesalerStream(String salerId) {
+    // New method added
     return _firestore
         .collection('sellers') // Updated collection name
         .doc(salerId)
         .snapshots()
         .map((doc) {
-          if (doc.exists) {
-            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-            return WholesalerModel.fromFirestore(data, doc.id );
-          }
-          return null;
-        });
+      if (doc.exists) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        return WholesalerModel.fromFirestore(data, doc.id);
+      }
+      return null;
+    });
   }
 
   Future<List<Product>> fetchAllProductsWithSalerId(String sellerId) async {
@@ -61,9 +61,10 @@ class FirebaseService {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
         // Ensure seller ID is included in the data
         data['seller_id'] = sellerId; // Add seller ID to the data
-        
+
         Product product = Product.fromFirestore(doc);
-        print('Fetched product: ${product.name} with seller ID: ${product.salerId}'); // Debug log
+        print(
+            'Fetched product: ${product.name} with seller ID: ${product.salerId}'); // Debug log
         return product;
       }).toList();
     } catch (e) {
@@ -72,14 +73,16 @@ class FirebaseService {
     }
   }
 
-
-  Future<void> toggleLikeProduct(String productId, Map<String, dynamic> productDetails) async {
+  Future<void> toggleLikeProduct(
+    String productId,
+  ) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
     final userRef = _firestore.collection('users').doc(user.uid);
     final likedItemsRef = userRef.collection('liked_items');
-    final productDocRef = likedItemsRef.doc(productId); // Updated to use productDocRef
+    final productDocRef =
+        likedItemsRef.doc(productId); // Updated to use productDocRef
 
     final likedDoc = await productDocRef.get();
 
@@ -91,7 +94,6 @@ class FirebaseService {
       await productDocRef.set({
         'id': productId,
         'liked_at': FieldValue.serverTimestamp(),
-        ...productDetails,
       });
     }
   }
@@ -109,7 +111,8 @@ class FirebaseService {
         .map((snapshot) => snapshot.exists);
   }
 
-  Future<void> initializeLikedItems() async { // New method added
+  Future<void> initializeLikedItems() async {
+    // New method added
     final user = _auth.currentUser;
     if (user == null) return;
 
@@ -143,7 +146,8 @@ class FirebaseService {
     });
   }
 
-  Future<Product?> fetchProductById(String productId, String salerId) async { // New method added
+  Future<Product?> fetchProductById(String productId, String salerId) async {
+    // New method added
     try {
       DocumentSnapshot doc = await _firestore
           .collection('products')
@@ -173,32 +177,33 @@ class FirebaseService {
         .doc('current_cart');
   }
 
-  Future<void> addToCart(Product product, int quantity, BuildContext context) async {
+  Future<void> addToCart(
+      ProductRestApi product, int quantity, BuildContext context) async {
     try {
       print('Adding product to cart:');
       print('Product ID: ${product.id}');
-      print('Seller ID: ${product.salerId}');
-      
-      if (product.salerId.isEmpty) {
-        throw Exception('Product has no seller ID');
-      }
+
+      // if (product.salerId.isEmpty) {
+      //   throw Exception('Product has no seller ID');
+      // }
 
       final cartDoc = await userCartRef.get();
-      final List<dynamic> currentItems = cartDoc.exists 
+      final List<dynamic> currentItems = cartDoc.exists
           ? (cartDoc.data() as Map<String, dynamic>)['cart_items'] ?? []
           : [];
 
-      final existingItemIndex = currentItems.indexWhere(
-          (item) => item['product_id'] == product.id);
+      final existingItemIndex =
+          currentItems.indexWhere((item) => item['product_id'] == product.id);
 
       final itemData = {
         'product_id': product.id,
         'name': product.name,
         'price': product.price,
-        'currency': product.currency,
-        'image': product.images.first,
+        'sale_price': product.salePrice,
+        'image': product.imageUrl,
         'quantity': quantity,
-        'seller_id': product.salerId, // Include seller_id in the item data
+        'category': product.categoryName,
+        'updated_at': FieldValue.serverTimestamp(),
       };
 
       print('Cart item data: $itemData');
@@ -239,38 +244,15 @@ class FirebaseService {
       try {
         if (!snapshot.exists) {
           print('Cart document does not exist');
-          return Cart(items: []);
+          return Cart.empty();
         }
 
         final data = snapshot.data() as Map<String, dynamic>;
-        print('Raw cart data: $data'); // Debug log
-
-        final List<dynamic> items = data['cart_items'] ?? [];
-        print('Cart items count: ${items.length}'); // Debug log
-
-        return Cart(
-          items: items.map((item) {
-            try {
-              print('Processing cart item: $item'); // Debug log
-              return CartItem(
-                productId: item['product_id'] ?? '',
-                name: item['name'] ?? '',
-                price: (item['price'] ?? 0.0).toDouble(),
-                currency: item['currency'] ?? '',
-                image: item['image'] ?? '',
-                quantity: item['quantity'] ?? 1,
-                salerId: item['seller_id'] ?? '', // Changed from top-level to item level
-              );
-            } catch (e) {
-              print('Error processing cart item: $e');
-              rethrow;
-            }
-          }).toList(),
-        );
+        return Cart.fromFirestore(data);
       } catch (e, stackTrace) {
         print('Error in getCartStream: $e');
         print('Stack trace: $stackTrace');
-        return Cart(items: []); // Return empty cart on error
+        return Cart.empty();
       }
     });
   }
@@ -289,7 +271,7 @@ class FirebaseService {
           .get();
 
       if (!doc.exists) return Cart(items: []);
-      return Cart.fromMap(doc.data() ?? {});
+      return Cart.fromFirestore(doc.data() ?? {});
     } catch (e) {
       print('Error getting cart: $e');
       return Cart(items: []);
@@ -297,7 +279,8 @@ class FirebaseService {
   }
 
   // Add item to cart
-  Future<void> addToCartForCartScreen(Product product, int quantity) async {
+  Future<void> addToCartForCartScreen(
+      ProductRestApi product, int quantity) async {
     try {
       final userId = _auth.currentUser?.uid;
       if (userId == null) throw 'User not authenticated';
@@ -309,8 +292,8 @@ class FirebaseService {
           .doc('current_cart');
 
       final cart = await getCart();
-      final existingItemIndex = cart.items
-          .indexWhere((item) => item.productId == product.id);
+      final existingItemIndex =
+          cart.items.indexWhere((item) => item.productId == product.id);
 
       if (existingItemIndex != -1) {
         // Update existing item
@@ -319,17 +302,18 @@ class FirebaseService {
         // Add new item
         cart.items.add(
           CartItem(
-            productId: product.id,
+            productId: product.id.toString(),
             name: product.name ?? '',
-            image: product.images.first,
+            image: product.imageUrl,
             price: product.price,
-            currency: product.currency,
-            quantity: quantity, salerId: product.salerId,
+            salePrice: product.salePrice,
+            quantity: quantity,
+            categoryName: product.categoryName,
           ),
         );
       }
 
-      await cartRef.set(cart.toMap());
+      await cartRef.set(cart.toFirestore());
     } catch (e) {
       print('Error adding to cart: $e');
       rethrow;
@@ -342,20 +326,15 @@ class FirebaseService {
       final cartDoc = await userCartRef.get();
       if (!cartDoc.exists) return;
 
-      final List<dynamic> items = (cartDoc.data() as Map<String, dynamic>)['cart_items'];
-      final itemIndex = items.indexWhere((item) => item['product_id'] == productId);
+      final cart = Cart.fromFirestore(cartDoc.data() as Map<String, dynamic>);
+      final updatedItems = cart.items.map((item) {
+        if (item.productId == productId) {
+          return item.copyWith(quantity: newQuantity);
+        }
+        return item;
+      }).toList();
 
-      if (itemIndex != -1) {
-        items[itemIndex] = {
-          ...items[itemIndex],
-          'quantity': newQuantity,
-        };
-
-        await userCartRef.set({
-          'cart_items': items,
-          'updated_at': FieldValue.serverTimestamp(),
-        });
-      }
+      await userCartRef.set(Cart(items: updatedItems).toFirestore());
     } catch (e) {
       print('Error updating cart quantity: $e');
       rethrow;
@@ -368,7 +347,8 @@ class FirebaseService {
       final cartDoc = await userCartRef.get();
       if (!cartDoc.exists) return;
 
-      final List<dynamic> items = (cartDoc.data() as Map<String, dynamic>)['cart_items'];
+      final List<dynamic> items =
+          (cartDoc.data() as Map<String, dynamic>)['cart_items'];
       items.removeWhere((item) => item['product_id'] == productId);
 
       await userCartRef.update({
@@ -405,10 +385,7 @@ class FirebaseService {
       final userId = _auth.currentUser?.uid;
       if (userId == null) throw Exception('No user logged in');
 
-      final doc = await _firestore
-          .collection('users')
-          .doc(userId)
-          .get();
+      final doc = await _firestore.collection('users').doc(userId).get();
 
       return doc.data();
     } catch (e) {
@@ -426,10 +403,7 @@ class FirebaseService {
       // Update timestamp
       userData['last_updated'] = FieldValue.serverTimestamp();
 
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .update(userData);
+      await _firestore.collection('users').doc(userId).update(userData);
     } catch (e) {
       print('Error updating user profile: $e');
       throw Exception('Failed to update profile');
@@ -444,7 +418,7 @@ class FirebaseService {
   }) async {
     try {
       print('Starting saveOrder process...');
-      
+
       final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId == null) throw Exception('User not authenticated');
 
@@ -456,16 +430,17 @@ class FirebaseService {
       final Map<String, List<CartItem>> itemsBySeller = {};
       for (var item in cart.items) {
         // Validate seller ID
-        if (item.salerId.isEmpty) {
+        if (item.categoryName.isEmpty) {
           throw Exception('Invalid seller ID for product: ${item.name}');
         }
-        
-        print('Processing item: ${item.name} with seller ID: ${item.salerId}'); // Debug log
-        
-        if (!itemsBySeller.containsKey(item.salerId)) {
-          itemsBySeller[item.salerId] = [];
+
+        print(
+            'Processing item: ${item.name} with seller ID: ${item.categoryName}'); // Debug log
+
+        if (!itemsBySeller.containsKey(item.categoryName)) {
+          itemsBySeller[item.categoryName] = [];
         }
-        itemsBySeller[item.salerId]!.add(item);
+        itemsBySeller[item.categoryName]!.add(item);
       }
 
       if (itemsBySeller.isEmpty) {
@@ -481,7 +456,7 @@ class FirebaseService {
       // Process each seller's order
       for (var entry in itemsBySeller.entries) {
         final sellerId = entry.key;
-        
+
         // Validate seller ID again
         if (sellerId.isEmpty) {
           continue; // Skip invalid seller IDs
@@ -498,30 +473,26 @@ class FirebaseService {
           'order_id': orderId,
           'user_id': userId,
           'seller_id': sellerId,
-          'items': sellerItems.map((item) => item.toMap()).toList(),
+          'items': sellerItems.map((item) => item.toFirestore()).toList(),
           'delivery_address': deliveryAddress,
           'user_data': userData,
           'total': sellerItems.fold(
-            0.0, 
-            (sum, item) => sum + (item.price * item.quantity)
-          ),
+              0.0, (sum, item) => sum + (item.price * item.quantity)),
           'status': 'pending',
           'created_at': FieldValue.serverTimestamp(),
           'updated_at': FieldValue.serverTimestamp(),
         };
 
         // Verify seller exists before adding to batch
-        final sellerDoc = await _firestore.collection('sellers').doc(sellerId).get();
+        final sellerDoc =
+            await _firestore.collection('sellers').doc(sellerId).get();
         if (!sellerDoc.exists) {
           print('Warning: Seller $sellerId does not exist');
           continue; // Skip non-existent sellers
         }
 
         // Save to seller's orders
-        batch.set(
-          _firestore.collection('orders').doc(orderId),
-          orderData
-        );
+        batch.set(_firestore.collection('orders').doc(orderId), orderData);
       }
 
       if (orderIds.isEmpty) {
@@ -534,11 +505,11 @@ class FirebaseService {
 
       // Clear the cart after successful order
       await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('cart')
-        .doc('current_cart')
-        .set({'cart_items': []});
+          .collection('users')
+          .doc(userId)
+          .collection('cart')
+          .doc('current_cart')
+          .set({'cart_items': []});
 
       print('Cart cleared successfully');
       return orderIds.join(', ');
@@ -550,32 +521,34 @@ class FirebaseService {
   }
 
   Stream<List<WholesalerModel>> wholesalersStream() {
-    return _firestore
-        .collection('sellers')
-        .snapshots()
-        .map((snapshot) {
-          print('Stream received ${snapshot.docs.length} wholesalers');
-          
-          return snapshot.docs.map((doc) {
-            Map<String, dynamic> data = doc.data();
-            print('Processing wholesaler: ${doc.id}');
-            // Added print statement to log raw address data
-            print('Raw address data: ${data['adress_of_company']}, ${data['city']}, ${data['country']}');
-            
-            try {
-              WholesalerModel wholesaler = WholesalerModel.fromFirestore(data, doc.id);
-              // Added print statement to log processed address data
-              print('Processed address: ${wholesaler.address.addressOfCompany}, ${wholesaler.address.city}, ${wholesaler.address.country}');
-              return wholesaler;
-            } catch (e) {
-              print('Error processing wholesaler ${doc.id}: $e');
-              return _createDefaultWholesaler(doc.id, data);
-            }
-          }).toList();
-        });
+    return _firestore.collection('sellers').snapshots().map((snapshot) {
+      print('Stream received ${snapshot.docs.length} wholesalers');
+
+      return snapshot.docs.map((doc) {
+        Map<String, dynamic> data = doc.data();
+        print('Processing wholesaler: ${doc.id}');
+        // Added print statement to log raw address data
+        print(
+            'Raw address data: ${data['adress_of_company']}, ${data['city']}, ${data['country']}');
+
+        try {
+          WholesalerModel wholesaler =
+              WholesalerModel.fromFirestore(data, doc.id);
+          // Added print statement to log processed address data
+          print(
+              'Processed address: ${wholesaler.address.addressOfCompany}, ${wholesaler.address.city}, ${wholesaler.address.country}');
+          return wholesaler;
+        } catch (e) {
+          print('Error processing wholesaler ${doc.id}: $e');
+          return _createDefaultWholesaler(doc.id, data);
+        }
+      }).toList();
+    });
   }
 
-  WholesalerModel _createDefaultWholesaler(String docId, Map<String, dynamic> data) { // New method added
+  WholesalerModel _createDefaultWholesaler(
+      String docId, Map<String, dynamic> data) {
+    // New method added
     return WholesalerModel(
       id: docId,
       email: data['email'] ?? '',
@@ -611,7 +584,9 @@ class FirebaseService {
         friday: DayHours(open: '', close: ''),
         saturday: DayHours(open: '', close: ''),
         sunday: DayHours(open: '', close: ''),
-      ), logoUrl: '', sellerId: '',
+      ),
+      logoUrl: '',
+      sellerId: '',
     );
   }
 
@@ -629,7 +604,8 @@ class FirebaseService {
     }
   }
 
-  Future<List<WholesalerModel>> fetchWholesalers() async { // New method added
+  Future<List<WholesalerModel>> fetchWholesalers() async {
+    // New method added
     try {
       final QuerySnapshot querySnapshot = await _firestore
           .collection('users')
@@ -649,12 +625,11 @@ class FirebaseService {
     }
   }
 
-  Future<WholesalerModel?> fetchWholesalerById(String wholesalerId) async { // New method added
+  Future<WholesalerModel?> fetchWholesalerById(String wholesalerId) async {
+    // New method added
     try {
-      final DocumentSnapshot doc = await _firestore
-          .collection('sellers')
-          .doc(wholesalerId)
-          .get();
+      final DocumentSnapshot doc =
+          await _firestore.collection('sellers').doc(wholesalerId).get();
 
       if (!doc.exists) {
         return null;
@@ -674,7 +649,7 @@ class FirebaseService {
   bool isOpenNow(WorkingHours workingHours) {
     final now = DateTime.now();
     final currentDay = now.weekday;
-    
+
     DayHours? dayHours;
     switch (currentDay) {
       case DateTime.monday:
@@ -706,12 +681,14 @@ class FirebaseService {
 
     final openTime = _parseTimeString(dayHours!.open);
     final closeTime = _parseTimeString(dayHours.close);
-    final currentTime = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+    final currentTime =
+        DateTime(now.year, now.month, now.day, now.hour, now.minute);
 
     return currentTime.isAfter(openTime) && currentTime.isBefore(closeTime);
   }
 
-  DateTime _parseTimeString(String timeString) { // New method added
+  DateTime _parseTimeString(String timeString) {
+    // New method added
     final parts = timeString.split(':');
     final now = DateTime.now();
     return DateTime(
@@ -722,33 +699,4 @@ class FirebaseService {
       int.parse(parts[1]),
     );
   }
-
-
-
-
-
-
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

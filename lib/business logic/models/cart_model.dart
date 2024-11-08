@@ -1,47 +1,64 @@
 // lib/business_logic/models/cart_model.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shop_app/business_logic_rest_api/models/product.dart';
 
 class CartItem {
   final String productId;
   final String name;
   final String image;
   final double price;
-  final String currency;
+  final double salePrice; // Added to handle sale prices
   int quantity;
-  final String salerId; // Make sure this is properly initialized
+  final String categoryName; // Added for better organization
 
   CartItem({
     required this.productId,
     required this.name,
     required this.image,
     required this.price,
-    required this.currency,
+    required this.salePrice,
     required this.quantity,
-    required this.salerId,
+    required this.categoryName,
   });
 
-  factory CartItem.fromMap(Map<String, dynamic> map) {
+  // Create from ProductRestApi
+  factory CartItem.fromProduct(ProductRestApi product, {int quantity = 1}) {
     return CartItem(
-      productId: map['product_id'] ?? '',
-      name: map['name'] ?? '',
-      image: map['image'] ?? '',
-      price: (map['price'] ?? 0).toDouble(),
-      currency: map['currency'] ?? '', // Ensure currency has a default value
-      quantity: map['quantity'] ?? 1,
-      salerId: map['seller_id'] ?? '', // Changed from 'saler_id' to 'seller_id'
+      productId: product.id.toString(),
+      name: product.name,
+      image: product.imageUrl,
+      price: product.price,
+      salePrice: product.salePrice,
+      quantity: quantity,
+      categoryName: product.categoryName,
     );
   }
 
-  Map<String, dynamic> toMap() {
+  // Simplified Firestore data structure
+  factory CartItem.fromFirestore(Map<String, dynamic> data) {
+    return CartItem(
+      productId: data['product_id'] ?? '',
+      name: data['name'] ?? '',
+      image: data['image'] ?? '',
+      price: (data['price'] ?? 0).toDouble(),
+      salePrice: (data['sale_price'] ?? 0).toDouble(),
+      quantity: data['quantity'] ?? 0,
+      categoryName: data['category'] ?? '',
+    );
+  }
+
+  // Only store essential data in Firestore
+  Map<String, dynamic> toFirestore() {
     return {
       'product_id': productId,
       'name': name,
       'image': image,
       'price': price,
-      'currency': currency,
+      'sale_price': salePrice,
       'quantity': quantity,
-      'seller_id': salerId, // Changed from 'saler_id' to 'seller_id'
+      'category': categoryName,
+      'updated_at': FieldValue.serverTimestamp(),
     };
   }
 
@@ -50,75 +67,101 @@ class CartItem {
     String? name,
     String? image,
     double? price,
-    String? currency,
+    double? salePrice,
     int? quantity,
-    String? salerId,
+    String? categoryName,
   }) {
     return CartItem(
       productId: productId ?? this.productId,
       name: name ?? this.name,
       image: image ?? this.image,
       price: price ?? this.price,
-      currency: currency ?? this.currency,
+      salePrice: salePrice ?? this.salePrice,
       quantity: quantity ?? this.quantity,
-      salerId: salerId ?? this.salerId,
+      categoryName: categoryName ?? this.categoryName,
     );
   }
 
-  factory CartItem.fromFirestore(Map<String, dynamic> data) {
-    return CartItem(
-      productId: data['product_id'] ?? '',
-      name: data['name'] ?? '',
-      price: (data['price'] ?? 0).toDouble(),
-      currency: data['currency'] ?? '',
-      image: data['image'] ?? '',
-      quantity: data['quantity'] ?? 0,
-      salerId: data['seller_id'] ?? '', // Changed from 'saler_id' to 'seller_id'
-    );
-  }
+  // Helper to get effective price (sale price if available)
+  double get effectivePrice => salePrice < price ? salePrice : price;
 
-  Map<String, dynamic> toFirestore() {
-    return {
-      'product_id': productId,
-      'name': name,
-      'price': price,
-      'currency': currency,
-      'image': image,
-      'quantity': quantity,
-      'seller_id': salerId,
-    };
-  }
+  // Calculate item total
+  double get total => effectivePrice * quantity;
 }
 
 class Cart {
   final List<CartItem> items;
 
-  Cart({
-    required this.items,
-  });
+  Cart({required this.items});
 
-  factory Cart.fromMap(Map<String, dynamic> map) {
-    final cartItems = (map['cart_items'] as List?)?.map(
-          (item) => CartItem.fromMap(item as Map<String, dynamic>),
-        ) ??
-        [];
-    return Cart(items: cartItems.toList());
+  factory Cart.empty() => Cart(items: []);
+
+  factory Cart.fromFirestore(Map<String, dynamic> data) {
+    final List<dynamic> cartItems = data['cart_items'] ?? [];
+    return Cart(
+      items: cartItems
+          .map((item) => CartItem.fromFirestore(item as Map<String, dynamic>))
+          .toList(),
+    );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toFirestore() {
     return {
-      'cart_items': items.map((item) => item.toMap()).toList(),
-      'updated_at': FieldValue.serverTimestamp(), // Added updated_at field
+      'cart_items': items.map((item) => item.toFirestore()).toList(),
+      'updated_at': FieldValue.serverTimestamp(),
+      'total_items': itemCount,
+      'total_amount': total,
     };
   }
 
+  // Helpers for cart manipulation
   double get total => items.fold(
         0,
-        (sum, item) => sum + (item.price * item.quantity),
+        (sum, item) => sum + item.total,
       );
 
   int get itemCount => items.fold(
         0,
         (sum, item) => sum + item.quantity,
       );
+
+  // Get items by seller
+  Map<String, List<CartItem>> get itemsBySeller {
+    // figure out whats the below code in case.
+    return groupBy(items, (item) => item.categoryName);
+  }
+
+  // Helper to group items
+  Map<K, List<T>> groupBy<T, K>(Iterable<T> items, K Function(T) key) {
+    Map<K, List<T>> result = {};
+    for (var item in items) {
+      final itemKey = key(item);
+      if (!result.containsKey(itemKey)) {
+        result[itemKey] = [];
+      }
+      result[itemKey]!.add(item);
+    }
+    return result;
+  }
+
+  // Create a new cart with updated item
+  Cart updateItem(CartItem updatedItem) {
+    final newItems = items.map((item) {
+      if (item.productId == updatedItem.productId) {
+        return updatedItem;
+      }
+      return item;
+    }).toList();
+    return Cart(items: newItems);
+  }
+
+  // Remove item from cart
+  Cart removeItem(String productId) {
+    return Cart(
+      items: items.where((item) => item.productId != productId).toList(),
+    );
+  }
+
+  // Clear cart
+  Cart clear() => Cart(items: []);
 }

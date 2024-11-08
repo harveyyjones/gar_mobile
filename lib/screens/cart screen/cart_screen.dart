@@ -18,13 +18,15 @@ class _CartScreenState extends State<CartScreen> {
   final FirebaseService _firebaseService = FirebaseService();
   bool _isLoading = false;
   final Map<String, TextEditingController> _quantityControllers = {};
-  final Map<String, Timer> _debounceTimers = {};  // Added debounce timers
-  final Map<String, int> _localQuantities = {};  // Local state for immediate UI updates
+  final Map<String, Timer> _debounceTimers = {}; // Added debounce timers
+  final Map<String, int> _localQuantities =
+      {}; // Local state for immediate UI updates
 
   @override
   void dispose() {
     _quantityControllers.values.forEach((controller) => controller.dispose());
-    _debounceTimers.values.forEach((timer) => timer.cancel());  // Cancel timers on dispose
+    _debounceTimers.values
+        .forEach((timer) => timer.cancel()); // Cancel timers on dispose
     super.dispose();
   }
 
@@ -73,7 +75,8 @@ class _CartScreenState extends State<CartScreen> {
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: AppTypography.body.copyWith(color: Colors.white)),
+        content: Text(message,
+            style: AppTypography.body.copyWith(color: Colors.white)),
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.accent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -121,7 +124,8 @@ class _CartScreenState extends State<CartScreen> {
                   padding: EdgeInsets.fromLTRB(16, 16, 16, 100),
                   itemCount: cart.items.length,
                   separatorBuilder: (context, index) => SizedBox(height: 16),
-                  itemBuilder: (context, index) => _buildCartItem(cart.items[index]),
+                  itemBuilder: (context, index) =>
+                      _buildCartItem(cart.items[index]),
                 ),
                 _buildBottomSheet(cart),
               ],
@@ -206,7 +210,7 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    '${item.price} ${item.currency}',
+                    '${item.price} PLN',
                     style: AppTypography.price,
                   ),
                   SizedBox(height: 8),
@@ -214,11 +218,13 @@ class _CartScreenState extends State<CartScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       QuantityInput(
-                        key: ValueKey(item.productId), // Important for maintaining state
+                        key: ValueKey(
+                            item.productId), // Important for maintaining state
                         item: item,
                         onQuantityChanged: (item, quantity) async {
                           try {
-                            await _firebaseService.updateCartItemQuantity(item.productId, quantity);
+                            await _firebaseService.updateCartItemQuantity(
+                                item.productId, quantity);
                           } catch (e) {
                             _showError('Failed to update quantity');
                           }
@@ -247,7 +253,8 @@ class _CartScreenState extends State<CartScreen> {
   TextEditingController _getQuantityController(CartItem item) {
     if (!_quantityControllers.containsKey(item.productId)) {
       final controller = TextEditingController(text: item.quantity.toString());
-      _localQuantities[item.productId] = item.quantity;  // Initialize local quantity
+      _localQuantities[item.productId] =
+          item.quantity; // Initialize local quantity
       _quantityControllers[item.productId] = controller;
     }
     return _quantityControllers[item.productId]!;
@@ -257,16 +264,17 @@ class _CartScreenState extends State<CartScreen> {
     final newValue = int.tryParse(value);
     if (newValue != null && newValue > 0 && newValue <= 9999) {
       setState(() {
-        _localQuantities[item.productId] = newValue;  // Update local quantity
+        _localQuantities[item.productId] = newValue; // Update local quantity
       });
-      
+
       // Cancel existing timer
       _debounceTimers[item.productId]?.cancel();
-      
+
       // Start new timer for database update
       _debounceTimers[item.productId] = Timer(
         const Duration(milliseconds: 1000),
-        () => _updateDatabaseQuantity(item, newValue),  // Update database after delay
+        () => _updateDatabaseQuantity(
+            item, newValue), // Update database after delay
       );
     }
   }
@@ -277,7 +285,8 @@ class _CartScreenState extends State<CartScreen> {
     } catch (e) {
       // Revert local state on error
       setState(() {
-        _localQuantities[item.productId] = item.quantity;  // Reset to original quantity
+        _localQuantities[item.productId] =
+            item.quantity; // Reset to original quantity
         _quantityControllers[item.productId]?.text = item.quantity.toString();
       });
       _showError('Failed to update quantity');
@@ -315,7 +324,7 @@ class _CartScreenState extends State<CartScreen> {
                   children: [
                     Text('Total', style: AppTypography.bodyLight),
                     Text(
-                      '${cart.total.toStringAsFixed(2)} ${cart.items.first.currency}',
+                      '${cart.total.toStringAsFixed(2)} PLN',
                       style: AppTypography.heading2,
                     ),
                   ],
@@ -329,7 +338,11 @@ class _CartScreenState extends State<CartScreen> {
                   borderRadius: BorderRadius.circular(12),
                   onPressed: () {
                     // Implement checkout
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => PostCheckoutScreen(cart: cart)));
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) =>
+                                PostCheckoutScreen(cart: cart)));
                   },
                   child: Text(
                     'Checkout',
@@ -374,10 +387,11 @@ class _CartScreenState extends State<CartScreen> {
           key: ValueKey(item.productId), // Important for maintaining state
           item: item,
           onQuantityChanged: (item, quantity) async {
-            await _firebaseService.updateCartItemQuantity(item.productId, quantity);
+            await _firebaseService.updateCartItemQuantity(
+                item.productId, quantity);
           },
         ),
-        _buildQuantityUpdateIndicator(item.productId),  // Show update indicator
+        _buildQuantityUpdateIndicator(item.productId), // Show update indicator
       ],
     );
   }
@@ -469,15 +483,13 @@ class _QuantityInputState extends State<QuantityInput> {
           // Updated button logic
           CupertinoButton(
             padding: EdgeInsets.all(8),
-            onPressed: _localQuantity > 1 
+            onPressed: _localQuantity > 1
                 ? () => _handleQuantityChange(_localQuantity - 1)
                 : null,
             child: Icon(
               CupertinoIcons.minus,
               size: 16,
-              color: _localQuantity > 1 
-                  ? AppColors.text 
-                  : AppColors.textLight,
+              color: _localQuantity > 1 ? AppColors.text : AppColors.textLight,
             ),
           ),
           SizedBox(
@@ -518,15 +530,14 @@ class _QuantityInputState extends State<QuantityInput> {
           ),
           CupertinoButton(
             padding: EdgeInsets.all(8),
-            onPressed: _localQuantity < 9999 
+            onPressed: _localQuantity < 9999
                 ? () => _handleQuantityChange(_localQuantity + 1)
                 : null,
             child: Icon(
               CupertinoIcons.plus,
               size: 16,
-              color: _localQuantity < 9999 
-                  ? AppColors.text 
-                  : AppColors.textLight,
+              color:
+                  _localQuantity < 9999 ? AppColors.text : AppColors.textLight,
             ),
           ),
         ],

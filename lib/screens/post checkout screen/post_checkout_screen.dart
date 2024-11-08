@@ -22,7 +22,7 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   String? _selectedBusinessEntity;
-  
+
   // Controllers for main company details
   final _companyNameController = TextEditingController();
   final _addressController = TextEditingController();
@@ -32,13 +32,13 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _contactNameController = TextEditingController();
-  
+
   // Controllers for business identification
   final _nipNumberController = TextEditingController();
   final _euVatController = TextEditingController();
   final _taxNoController = TextEditingController();
   final _companyRegNoController = TextEditingController();
-  
+
   // Controllers for delivery address
   final _deliveryNameController = TextEditingController();
   final _deliveryAddressController = TextEditingController();
@@ -80,7 +80,8 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
         _nipNumberController.text = userData['nip_number'] ?? '';
         _euVatController.text = userData['eu_vat_no'] ?? '';
         _taxNoController.text = userData['tax_no'] ?? '';
-        _companyRegNoController.text = userData['company_registration_no'] ?? '';
+        _companyRegNoController.text =
+            userData['company_registration_no'] ?? '';
         _selectedBusinessEntity = userData['business_entity'] ?? '';
 
         // Load delivery address if exists
@@ -95,12 +96,12 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
           _cargoCompanyController.text = delivery['cargo_company'] ?? '';
           _cargoCustomerNoController.text = delivery['cargo_customer_no'] ?? '';
         }
-        
+
         // Handle business entity type
         final businessEntity = userData['business_entity'] as String?;
         setState(() {
-          _selectedBusinessEntity = businessEntity != null && 
-                                  _businessEntityTypes.contains(businessEntity)
+          _selectedBusinessEntity = businessEntity != null &&
+                  _businessEntityTypes.contains(businessEntity)
               ? businessEntity
               : null;
         });
@@ -123,7 +124,7 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
       );
       return;
     }
-    
+
     if (_selectedBusinessEntity == null) {
       _showCustomSnackBar(
         'Please select a business entity type',
@@ -135,12 +136,12 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
     setState(() => _isLoading = true);
     try {
       print('Starting order placement...'); // Debug log
-      
+
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
         throw Exception('User not authenticated');
       }
-      
+
       // Create user data with print statements for debugging
       final userData = {
         'company_name': _companyNameController.text,
@@ -159,7 +160,8 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
         'adress_of_delivery': [
           {
             'name': _deliveryNameController.text,
-            'adress': _deliveryAddressController.text,  // Complete the address field
+            'adress':
+                _deliveryAddressController.text, // Complete the address field
             'city': _deliveryCityController.text,
             'zip': _deliveryZipController.text,
             'country': _deliveryCountryController.text,
@@ -175,7 +177,7 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
 
       final deliveryAddress = {
         'name': _deliveryNameController.text,
-        'adress': _deliveryAddressController.text,  // Complete the address field
+        'adress': _deliveryAddressController.text, // Complete the address field
         'city': _deliveryCityController.text,
         'zip': _deliveryZipController.text,
         'country': _deliveryCountryController.text,
@@ -185,8 +187,10 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
         'business_entity': 'Ship to my place',
       };
 
-      print('Delivery address prepared: ${deliveryAddress.toString()}'); // Debug log
-      print('Cart data prepared: ${widget.cart.items.length} items'); // Debug log
+      print(
+          'Delivery address prepared: ${deliveryAddress.toString()}'); // Debug log
+      print(
+          'Cart data prepared: ${widget.cart.items.length} items'); // Debug log
 
       // First update the user profile
       print('Updating user profile...'); // Debug log
@@ -202,20 +206,21 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
       );
       print('Order saved successfully with ID: $orderId'); // Debug log
 
-      _showCustomSnackBar(  // Update success message to include Order ID
+      _showCustomSnackBar(
+        // Update success message to include Order ID
         'Order placed successfully! Order ID: $orderId',
         isError: false,
       );
-      
+
       // Navigate back after successful order
-      Future.delayed(Duration(seconds: 2), () {  // New navigation logic
+      Future.delayed(Duration(seconds: 2), () {
+        // New navigation logic
         Navigator.of(context).popUntil((route) => route.isFirst);
       });
-      
     } catch (e, stackTrace) {
       print('Error in _saveProfile: $e'); // Debug log
       print('Stack trace: $stackTrace'); // Debug stack trace
-      
+
       _showCustomSnackBar(
         'Failed to place order. Please try again.',
         isError: true,
@@ -235,7 +240,9 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
         content: Row(
           children: [
             Icon(
-              isError ? CupertinoIcons.xmark_circle : CupertinoIcons.check_mark_circled,
+              isError
+                  ? CupertinoIcons.xmark_circle
+                  : CupertinoIcons.check_mark_circled,
               color: Colors.white,
             ),
             SizedBox(width: 8),
@@ -263,7 +270,8 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(  // Add this Scaffold wrapper
+    return Scaffold(
+      // Add this Scaffold wrapper
       body: CupertinoPageScaffold(
         navigationBar: CupertinoNavigationBar(
           middle: Text('Checkout'),
@@ -290,67 +298,76 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                           ),
                           SizedBox(height: 16),
                           // Order items list
-                          ...widget.cart.items.map((item) => Container(
-                            margin: EdgeInsets.only(bottom: 12),
-                            padding: EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: CupertinoColors.systemBackground,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: CupertinoColors.systemGrey5,
-                              ),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: Image.network(
-                                    item.image,
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      width: 60,
-                                      height: 60,
-                                      color: CupertinoColors.systemGrey5,
-                                      child: Icon(CupertinoIcons.photo),
+                          ...widget.cart.items
+                              .map((item) => Container(
+                                    margin: EdgeInsets.only(bottom: 12),
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: CupertinoColors.systemBackground,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: CupertinoColors.systemGrey5,
+                                      ),
                                     ),
-                                  ),
-                                ),
-                                SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item.name,
-                                        style: GoogleFonts.poppins(
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 16,
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                          child: Image.network(
+                                            item.image,
+                                            width: 60,
+                                            height: 60,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) =>
+                                                    Container(
+                                              width: 60,
+                                              height: 60,
+                                              color:
+                                                  CupertinoColors.systemGrey5,
+                                              child: Icon(CupertinoIcons.photo),
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        '${item.quantity} × ${item.price} ${item.currency}',
-                                        style: GoogleFonts.poppins(
-                                          color: CupertinoColors.systemGrey,
-                                          fontSize: 14,
+                                        SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                item.name,
+                                                style: GoogleFonts.poppins(
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
+                                                '${item.quantity} × ${item.price} PLN',
+                                                style: GoogleFonts.poppins(
+                                                  color: CupertinoColors
+                                                      .systemGrey,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(
-                                  '${(item.price * item.quantity).toStringAsFixed(2)} ${item.currency}',
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )).toList(),
+                                        Text(
+                                          '${(item.price * item.quantity).toStringAsFixed(2)} PLN',
+                                          style: GoogleFonts.poppins(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ))
+                              .toList(),
                           SizedBox(height: 24),
                           // Pricing summary
                           Container(
@@ -429,7 +446,8 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                                       label: 'Typ podmiotu gospodarczego',
                                       items: _businessEntityTypes,
                                       onChanged: (value) {
-                                        setState(() => _selectedBusinessEntity = value);
+                                        setState(() =>
+                                            _selectedBusinessEntity = value);
                                       },
                                       required: true,
                                     ),
@@ -467,7 +485,6 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
                                       required: true,
                                       keyboardType: TextInputType.phone,
                                     ),
-                                  
                                   ],
                                 ),
                                 _buildSection(
@@ -646,7 +663,7 @@ class _PostCheckoutScreenState extends State<PostCheckoutScreen> {
           ),
         ),
         Text(
-          '${amount.toStringAsFixed(2)} ${widget.cart.items.first.currency}',
+          '${amount.toStringAsFixed(2)} PLN',
           style: GoogleFonts.poppins(
             fontSize: isTotal ? 16 : 14,
             fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,

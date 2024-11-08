@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:shop_app/business%20logic/models/product_model.dart';
 import 'package:shop_app/business%20logic/firebase_service.dart';
-import 'package:carousel_slider/carousel_slider.dart';
+import 'package:shop_app/business%20logic/models/cart_model.dart';
+import 'package:shop_app/business_logic_rest_api/models/product.dart';
 import 'package:shop_app/screens/details/components/like_button.dart';
-import 'dart:ui'; // Add this import for ImageFilter
-import 'package:shop_app/business%20logic/models/cart_model.dart'; // New import for CartItem model
 
 class ProductDetailScreen extends StatefulWidget {
-  const ProductDetailScreen({super.key, required this.product});
-  final Product product;
+  final ProductRestApi product;
+
+  const ProductDetailScreen({
+    Key? key,
+    required this.product,
+  }) : super(key: key);
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -18,25 +19,23 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   final FirebaseService _firebaseService = FirebaseService();
   int quantity = 1;
-  int selectedImageIndex = 0;
-  CarouselSliderController _carouselController = CarouselSliderController();
-  late Stream<int> _cartQuantityStream; // Added stream for cart quantity
+  late Stream<int> _cartQuantityStream;
 
   @override
   void initState() {
     super.initState();
-    // Create a stream for the cart quantity of this product
+    // Create a stream for the cart quantity of this productÁÁ
     _cartQuantityStream = _firebaseService.getCartStream().map((cart) {
       final cartItem = cart.items.firstWhere(
-        (item) => item.productId == widget.product.id,
+        (item) => item.productId == widget.product.id.toString(),
         orElse: () => CartItem(
-          // Default CartItem if not found
-          productId: widget.product.id,
+          productId: widget.product.id.toString(),
           name: widget.product.name,
+          image: widget.product.imageUrl,
           price: widget.product.price,
-          currency: widget.product.currency,
-          image: widget.product.images.first,
-          quantity: 0, salerId: widget.product.salerId,
+          salePrice: widget.product.salePrice,
+          quantity: 0,
+          categoryName: widget.product.categoryName,
         ),
       );
       return cartItem.quantity;
@@ -52,371 +51,167 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     });
   }
 
-  Future<void> _updateCartQuantity(int newQuantity) async {
-    // New method to update cart quantity
-    if (newQuantity <= 0) return;
-
-    setState(() {
-      quantity = newQuantity;
-    });
-
+  Future<void> _addToCart() async {
     try {
-      if (newQuantity > 0) {
-        await _firebaseService.updateCartItemQuantity(
-            widget.product.id, newQuantity);
-      } else {
-        await _firebaseService.removeFromCart(widget.product.id);
+      await _firebaseService.addToCartForCartScreen(widget.product, quantity);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text(quantity > 0 ? 'Updated cart quantity' : 'Added to cart'),
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update quantity: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      // Revert the quantity if update fails
-      setState(() {
-        quantity = quantity; // This line seems redundant, consider removing it
-      });
-    }
-  }
-
-  Future<void> _addToCart() async {
-    // Updated method to handle adding/updating cart
-    try {
-      await _firebaseService.addToCart(widget.product, quantity, context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text(quantity > 0 ? 'Updated cart quantity' : 'Added to cart'),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update cart: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  // New method for showing full screen image
-  void _showFullScreenImage(BuildContext context, String image) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => Scaffold(
-          backgroundColor: Colors.black,
-          body: SafeArea(
-            child: Stack(
-              children: [
-                // Image with zoom
-                InteractiveViewer(
-                  minScale: 0.5,
-                  maxScale: 4.0,
-                  child: Center(
-                    child: Hero(
-                      tag: 'product-${widget.product.id}-$image',
-                      child: Image.network(
-                        image,
-                        fit: BoxFit.contain,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                              color: Colors.white,
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.error_outline,
-                                  size: 32, color: Colors.white),
-                              SizedBox(height: 8),
-                              Text(
-                                'Nie udało się załadować obrazu',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // Close button
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
-                // Image counter
-                if (widget.product.images.length > 1)
-                  Positioned(
-                    top: 16,
-                    right: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        '${widget.product.images.indexOf(image) + 1}/${widget.product.images.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update cart: $e'),
+            backgroundColor: Colors.red,
           ),
-        ),
-        fullscreenDialog: true,
-      ),
-    );
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildProductInfo(),
-                  const SizedBox(height: 24),
-                  _buildQuantitySelector(),
-                  const SizedBox(height: 24),
-                  _buildDescription(),
-                  const SizedBox(height: 100), // Space for bottom button
-                ],
-              ),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: LikeButton(
+              productId: widget.product.id.toString(),
             ),
           ),
         ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProductImage(),
+            _buildProductInfo(),
+          ],
+        ),
       ),
       bottomSheet: _buildBottomSheet(),
     );
   }
 
-  Widget _buildSliverAppBar() {
-    return SliverAppBar(
-      expandedHeight: 400,
-      pinned: true,
-      backgroundColor: Colors.white,
-      elevation: 0,
-      leading: IconButton(
-        onPressed: () => Navigator.pop(context),
-        icon:
-            const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.black),
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Main Carousel
-            CarouselSlider.builder(
-              carouselController: _carouselController,
-              itemCount: widget.product.images.length,
-              options: CarouselOptions(
-                height: 400,
-                viewportFraction: 1,
-                enableInfiniteScroll: widget.product.images.length > 1,
-                autoPlay: false,
-                onPageChanged: (index, reason) {
-                  setState(() => selectedImageIndex = index);
-                },
+  Widget _buildProductImage() {
+    return Hero(
+      tag: 'product-${widget.product.id}',
+      child: Container(
+        height: 300,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+        ),
+        child: Image.network(
+          widget.product.imageUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => const Center(
+            child: Icon(Icons.error_outline, size: 32, color: Colors.grey),
+          ),
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
               ),
-              itemBuilder: (context, index, realIndex) {
-                final image = widget.product.images[index];
-                return GestureDetector(
-                  onTap: () => _showFullScreenImage(context, image),
-                  child: Hero(
-                    tag: 'product-${widget.product.id}-$image',
-                    child: Image.network(
-                      image,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                                : null,
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Center(
-                        child: Icon(
-                          Icons.error_outline,
-                          size: 32,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            // Navigation Arrows
-            if (widget.product.images.length > 1)
-              Positioned.fill(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildNavigationArrow(
-                      icon: Icons.arrow_back_ios_new,
-                      onTap: () {
-                        if (selectedImageIndex > 0) {
-                          // Check to prevent going back if at the first image
-                          _carouselController.previousPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        }
-                      },
-                    ),
-                    _buildNavigationArrow(
-                      icon: Icons.arrow_forward_ios,
-                      onTap: () {
-                        if (selectedImageIndex <
-                            widget.product.images.length - 1) {
-                          // Check to prevent going forward if at the last image
-                          _carouselController.nextPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            // Page Indicator
-            if (widget.product.images.length > 1) // Added page indicator
-              Positioned(
-                bottom: 20,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children:
-                            widget.product.images.asMap().entries.map((entry) {
-                          return Container(
-                            width: 8,
-                            height: 8,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: selectedImageIndex == entry.key
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.5),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
 
   Widget _buildProductInfo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          widget.product.name,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            letterSpacing: -0.5,
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.product.name,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -0.5,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${widget.product.price} ${widget.product.currency}',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.blue,
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              if (widget.product.salePrice < widget.product.price) ...[
+                Text(
+                  "${widget.product.price.toStringAsFixed(2)} PLN",
+                  style: TextStyle(
+                    fontSize: 16,
+                    decoration: TextDecoration.lineThrough,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                "${widget.product.salePrice.toStringAsFixed(2)} PLN",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: widget.product.salePrice < widget.product.price
+                      ? Colors.red
+                      : Colors.blue,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          _buildQuantitySelector(),
+          const SizedBox(height: 24),
+          if (widget.product.description != null) ...[
+            const Text(
+              'Description',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            LikeButton(
-              productId: widget.product.id,
-              productDetails: widget.product.toFirestore(),
+            const SizedBox(height: 8),
+            Text(
+              widget.product.description ?? '',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
             ),
           ],
-        ),
-      ],
+          const SizedBox(height: 100), // Space for bottom sheet
+        ],
+      ),
     );
   }
 
   Widget _buildQuantitySelector() {
     return StreamBuilder<int>(
-      // Updated to use StreamBuilder
       stream: _cartQuantityStream,
       builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Text('Błąd: ${snapshot.error}');
-        }
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -427,7 +222,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Ilość',
+                'Quantity',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -450,16 +245,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     _buildQuantityButton(
                       icon: Icons.remove,
                       onPressed: () {
-                        if (quantity > 1) {
-                          setState(() => quantity--);
-                        }
+                        if (quantity > 1) setState(() => quantity--);
                       },
                     ),
-                    Container(
+                    SizedBox(
                       width: 40,
-                      alignment: Alignment.center,
                       child: Text(
                         '$quantity',
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -468,9 +261,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     ),
                     _buildQuantityButton(
                       icon: Icons.add,
-                      onPressed: () {
-                        setState(() => quantity++);
-                      },
+                      onPressed: () => setState(() => quantity++),
                     ),
                   ],
                 ),
@@ -501,154 +292,67 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  Widget _buildDescription() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Opis',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          widget.product.productDescription,
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-            height: 1.5,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildBottomSheet() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
+            blurRadius: 10,
             offset: const Offset(0, -5),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-              sigmaX: 10.0, sigmaY: 10.0), // Use blur instead of matrix
-          child: SafeArea(
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(left: 10),
-                        child: Text(
-                          'Łączna cena',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${(widget.product.price * quantity).toStringAsFixed(2)} ${widget.product.currency}',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: SizedBox(
-                    height: 60,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        HapticFeedback.mediumImpact();
-                        _addToCart();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: LayoutBuilder(builder: (context, constraints) {
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.shopping_cart_outlined,
-                                size: constraints.maxWidth * 0.08),
-                            SizedBox(width: constraints.maxWidth * 0.03),
-                            Text(
-                              'Dodaj do koszyka',
-                              style: TextStyle(
-                                fontSize: constraints.maxWidth * 0.06,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        );
-                      }),
+      child: SafeArea(
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total Price',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
                     ),
                   ),
-                ),
-              ],
+                  Text(
+                    // TODO: Add the change of currency feature here.
+                    '${(widget.product.salePrice * quantity).toStringAsFixed(2)} "PLN"}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // New method for building navigation arrows
-  Widget _buildNavigationArrow({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        height: 40,
-        width: 40,
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.3),
-          shape: BoxShape.circle,
-          boxShadow: [
-            // Added shadow to the navigation arrow
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              spreadRadius: 1,
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _addToCart,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.shopping_cart_outlined),
+                    SizedBox(width: 8),
+                    Text('Add to Cart'),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
-        child: Icon(icon, color: Colors.white),
       ),
     );
   }

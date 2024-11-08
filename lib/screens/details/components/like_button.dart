@@ -3,12 +3,11 @@ import 'package:shop_app/business%20logic/firebase_service.dart';
 
 class LikeButton extends StatelessWidget {
   final String productId;
-  final Map<String, dynamic> productDetails;
+//  Map<String, dynamic> productDetails;
   final FirebaseService _firebaseService = FirebaseService();
 
   LikeButton({
     required this.productId,
-    required this.productDetails,
   });
 
   @override
@@ -23,7 +22,7 @@ class LikeButton extends StatelessWidget {
         final isLiked = snapshot.data ?? false;
 
         return GestureDetector(
-          onTap: () => _firebaseService.toggleLikeProduct(productId, productDetails),
+          onTap: () => _firebaseService.toggleLikeProduct(productId),
           child: AnimatedSwitcher(
             duration: Duration(milliseconds: 200),
             transitionBuilder: (Widget child, Animation<double> animation) {

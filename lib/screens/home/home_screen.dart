@@ -73,12 +73,14 @@ class AppTypography {
   );
 }
 
-class HomePage extends StatefulWidget { // Changed from StatelessWidget to StatefulWidget
+class HomePage extends StatefulWidget {
+  // Changed from StatelessWidget to StatefulWidget
   @override
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> { // New state class for HomePage
+class _HomePageState extends State<HomePage> {
+  // New state class for HomePage
   final FirebaseService _firebaseService = FirebaseService();
   final ScrollController _scrollController = ScrollController();
 
@@ -111,16 +113,18 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
                 ),
                 onLikedTap: () => Navigator.push(
                   context,
-                  CupertinoPageRoute(builder: (context) => LikedProductsWidget()),
+                  CupertinoPageRoute(
+                      builder: (context) => LikedProductsWidget()),
                 ),
               ),
             ),
-            
+
             // Updated StreamBuilder to use WholesalerModel
             SliverPadding(
               padding: const EdgeInsets.only(top: 8),
               sliver: SliverToBoxAdapter(
-                child: StreamBuilder<List<WholesalerModel>>(  // Changed type from List<Map<String, dynamic>>
+                child: StreamBuilder<List<WholesalerModel>>(
+                  // Changed type from List<Map<String, dynamic>>
                   stream: _firebaseService.wholesalersStream(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -151,10 +155,12 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: wholesalers.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 16),
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(height: 16),
                           itemBuilder: (context, index) {
                             final wholesaler = wholesalers[index];
-                            return _buildWholesalerItem(context, wholesaler);  // Pass WholesalerModel directly
+                            return _buildWholesalerItem(context,
+                                wholesaler); // Pass WholesalerModel directly
                           },
                         ),
                       ),
@@ -233,20 +239,23 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
     );
   }
 
-  Widget _buildWholesalerList(BuildContext context, List<Map<String, dynamic>> wholesalers) {
+  Widget _buildWholesalerList(
+      BuildContext context, List<Map<String, dynamic>> wholesalers) {
     return ListView.builder(
       shrinkWrap: true,
       itemCount: wholesalers.length,
       itemBuilder: (context, index) {
         final wholesalerMap = wholesalers[index];
-        final wholesaler = WholesalerModel.fromFirestore(wholesalerMap, wholesalerMap['id']);
+        final wholesaler =
+            WholesalerModel.fromFirestore(wholesalerMap, wholesalerMap['id']);
         return _buildWholesalerItem(context, wholesaler);
       },
     );
   }
 
   // Updated wholesaler item builder
-  Widget _buildWholesalerItem(BuildContext context, WholesalerModel wholesaler) {
+  Widget _buildWholesalerItem(
+      BuildContext context, WholesalerModel wholesaler) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -275,7 +284,7 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                       wholesaler.name ?? "unknown",
+                        wholesaler.name ?? "unknown",
                         style: AppTypography.heading3,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -302,10 +311,12 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
               ],
             ),
           ),
-          if (wholesaler.sellerId.isNotEmpty) ...[ // Changed condition
+          if (wholesaler.sellerId.isNotEmpty) ...[
+            // Changed condition
             const SizedBox(height: 16),
             FutureBuilder<List<Product>>(
-              future: _firebaseService.fetchAllProductsWithSalerId(wholesaler.sellerId),
+              future: _firebaseService
+                  .fetchAllProductsWithSalerId(wholesaler.sellerId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -315,17 +326,17 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
                     ),
                   );
                 }
-                
+
                 if (snapshot.hasError) {
                   print('Error loading products: ${snapshot.error}');
                   return const SizedBox.shrink();
                 }
-                
+
                 final products = snapshot.data ?? [];
                 if (products.isEmpty) {
                   return const SizedBox.shrink();
                 }
-                
+
                 return SizedBox(
                   height: 120, // Increased height to accommodate product info
                   child: ListView.builder(
@@ -452,7 +463,7 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
   bool _isOpenNow(WorkingHours workingHours) {
     final now = DateTime.now();
     final currentDay = now.weekday;
-    
+
     DayHours? dayHours;
     switch (currentDay) {
       case DateTime.monday:
@@ -485,7 +496,8 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
     try {
       final openTime = _parseTimeString(dayHours!.open);
       final closeTime = _parseTimeString(dayHours.close);
-      final currentTime = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+      final currentTime =
+          DateTime(now.year, now.month, now.day, now.hour, now.minute);
 
       return currentTime.isAfter(openTime) && currentTime.isBefore(closeTime);
     } catch (e) {
@@ -505,7 +517,9 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
     );
   }
 
-  Widget _buildOptimizedImage(String? imageUrl, {double? width, double? height}) { // New method for optimized image loading
+  Widget _buildOptimizedImage(String? imageUrl,
+      {double? width, double? height}) {
+    // New method for optimized image loading
     return Container(
       width: width ?? 60,
       height: height ?? 60,
@@ -526,7 +540,8 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
             ? Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
-                cacheWidth: (width ?? 60 * 2).toInt(), // 2x for high DPI displays
+                cacheWidth:
+                    (width ?? 60 * 2).toInt(), // 2x for high DPI displays
                 cacheHeight: (height ?? 60 * 2).toInt(),
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
@@ -551,89 +566,82 @@ class _HomePageState extends State<HomePage> { // New state class for HomePage
     );
   }
 
-Widget _buildProductItem(Product product, BuildContext context) {
-  final double itemSize = MediaQuery.of(context).size.width * 0.25; // 25% of screen width
-  
-  return GestureDetector(
-    onTap: () {
-      Navigator.push(
-        context,
-        CupertinoPageRoute(
-          builder: (context) => ProductDetailScreen(product: product),
-        ),
-      );
-    },
-    child: Container(
-      width: itemSize,
-      height: itemSize,
-      margin: const EdgeInsets.only(right: 8),
-      decoration: BoxDecoration(
-        color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.text.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              product.images.isNotEmpty ? product.images.first : 'placeholder_url',
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return const Center(
-                  child: CupertinoActivityIndicator(),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) => const Icon(
-                CupertinoIcons.photo,
-                color: AppColors.textLight,
-              ),
-            ),
-          ),
-          
-          // Optional: Like button overlay
-          Positioned(
-            top: 4,
-            right: 4,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              child: LikeButton(
-                productId: product.id,
-                productDetails: {
-                  "product_image": product.images.first,
-                  "product_id": product.id,
-                  "category_path": product.categoryPath,
-                  "liked_at": product.createdAt.toIso8601String(),
-                  "is_visible": product.isVisible,
-                  "name": product.name,
-                  "product_description": product.productDescription,
-                  "currency": product.currency,
-                  "price": product.price,
-                  "saler_id": product.salerId,
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
+  Widget _buildProductItem(Product product, BuildContext context) {
+    final double itemSize =
+        MediaQuery.of(context).size.width * 0.25; // 25% of screen width
 
-  Widget _buildProductImage(String imageUrl) { // Updated method for product image
+    return GestureDetector(
+      onTap: () {
+        // TODO: add product detail screen here.
+        // Navigator.push(
+        //   context,
+        //   CupertinoPageRoute(
+        //     builder: (context) => ProductDetailScreen(product: product),
+        //   ),
+        // );
+      },
+      child: Container(
+        width: itemSize,
+        height: itemSize,
+        margin: const EdgeInsets.only(right: 8),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.text.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                product.images.isNotEmpty
+                    ? product.images.first
+                    : 'placeholder_url',
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(
+                    child: CupertinoActivityIndicator(),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  CupertinoIcons.photo,
+                  color: AppColors.textLight,
+                ),
+              ),
+            ),
+
+            // Optional: Like button overlay
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: LikeButton(
+                  productId: product.id.toString(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductImage(String imageUrl) {
+    // Updated method for product image
     return Container(
       width: 100,
       height: 100,
@@ -641,7 +649,8 @@ Widget _buildProductItem(Product product, BuildContext context) {
       decoration: BoxDecoration(
         color: CupertinoColors.systemGrey6,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [ // Added shadow for elevation effect
+        boxShadow: [
+          // Added shadow for elevation effect
           BoxShadow(
             color: CupertinoColors.systemGrey.withOpacity(0.1),
             blurRadius: 10,
@@ -651,7 +660,8 @@ Widget _buildProductItem(Product product, BuildContext context) {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: CachedNetworkImage( // Updated to use CachedNetworkImage
+        child: CachedNetworkImage(
+          // Updated to use CachedNetworkImage
           imageUrl: imageUrl,
           fit: BoxFit.cover,
           placeholder: (context, url) => const Center(
@@ -668,7 +678,8 @@ Widget _buildProductItem(Product product, BuildContext context) {
   }
 }
 
-class _ModernHeaderDelegate extends SliverPersistentHeaderDelegate { // New class for header
+class _ModernHeaderDelegate extends SliverPersistentHeaderDelegate {
+  // New class for header
   final VoidCallback onCartTap;
   final VoidCallback onLikedTap;
 
@@ -689,12 +700,15 @@ class _ModernHeaderDelegate extends SliverPersistentHeaderDelegate { // New clas
   }
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     final progress = shrinkOffset / maxExtent;
     return Container(
-      color: CupertinoColors.systemBackground.withOpacity(0.8), // Added background with opacity
+      color: CupertinoColors.systemBackground
+          .withOpacity(0.8), // Added background with opacity
       child: ClipRRect(
-        child: BackdropFilter( // Added blur effect
+        child: BackdropFilter(
+          // Added blur effect
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: SafeArea(
             bottom: false,
@@ -729,21 +743,25 @@ class _ModernHeaderDelegate extends SliverPersistentHeaderDelegate { // New clas
                         badgeCount: null,
                         iconColor: CupertinoColors.systemPink,
                       ),
-                         const SizedBox(width: 12),
+                      const SizedBox(width: 12),
                       _buildIconButton(
                         onTap: () {
-                          Navigator.push(context, CupertinoPageRoute(builder: (context) => OrderHistoryScreen()));
+                          Navigator.push(
+                              context,
+                              CupertinoPageRoute(
+                                  builder: (context) => OrderHistoryScreen()));
                         },
                         icon: CupertinoIcons.time,
                         badgeCount: null,
                         iconColor: const Color.fromARGB(255, 0, 0, 0),
                       ),
-                        const SizedBox(width: 12),
-
+                      const SizedBox(width: 12),
                       _buildIconButton(
                         onTap: () {
-                          Navigator.push(context, CupertinoPageRoute(builder: (context) => 
-                           SettingsScreen()));
+                          Navigator.push(
+                              context,
+                              CupertinoPageRoute(
+                                  builder: (context) => SettingsScreen()));
                         },
                         icon: CupertinoIcons.settings,
                         badgeCount: null,
@@ -800,4 +818,3 @@ Widget _buildIconButton({
     ),
   );
 }
-
